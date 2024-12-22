@@ -69,7 +69,8 @@ LDMatrix::LDMatrix(const string& filename) { // instance만들면 바로 load.
 
 
 	// check with printing
-	matrix.print("LD matrix: ");
+	
+	//matrix.print("LD matrix: ");
 
 	std::cout << "col_inx_HLA contains " << col_idx_HLA.size() << " items:" << std::endl;
 
@@ -93,7 +94,7 @@ LDMatrix::LDMatrix(const string& filename) { // instance만들면 바로 load.
 
 	inv_matrix_SNPs = matrix(indices_to_keep, indices_to_keep);
 
-	inv_matrix_SNPs.print("The subsetted matrix_SNPs:");
+	// inv_matrix_SNPs.print("The subsetted matrix_SNPs:");
 
 
 	// [1-2] eigenvalues계산해놓기 => Log-likelihood계산할때 사용.
@@ -111,7 +112,7 @@ LDMatrix::LDMatrix(const string& filename) { // instance만들면 바로 load.
 
 	// check with printing
 	eigenvalues_SNPs.print("eigenvalues_SNPs:");
-	inv_matrix_SNPs.print("The inverted matrix_SNPs:");
+	//inv_matrix_SNPs.print("The inverted matrix_SNPs:");
 
 
 

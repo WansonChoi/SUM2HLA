@@ -23,7 +23,7 @@ int main(int argc, char *argv[]){
 	string outputFileName = "";
 	string geneMapFile = "";	
 
-	while ((oc = getopt(argc, argv, "vhl:o:z:g:r:c:f:")) != -1) {
+	while ((oc = getopt(argc, argv, "vhl:o:z:g:r:c:f:n:")) != -1) {
 		switch (oc) {
 			case 'v':
 				cout << "version 2.2:" << endl;
@@ -37,6 +37,7 @@ int main(int argc, char *argv[]){
 				cout << "-g GAMMA, --gamma		set $gamma$ the prior of a SNP being causal (default 0.01)" << endl;
 				cout << "-c causal			set the maximum number of causal SNPs" << endl;
 				cout << "-f 1				to out the probaility of different number of causal SNP" << endl;
+				cout << "-n NCP				set the Non-Centrality Parameter value" << endl;
 				exit(0);
 			case 'l':
 				ldFile = string(optarg);
@@ -61,6 +62,8 @@ int main(int argc, char *argv[]){
                                 break;
 			case ':':
 			case '?':
+			case 'n':
+				NCP = atof(optarg);
 			default:
 				cout << "Strange" << endl;
 				break;
@@ -70,7 +73,7 @@ int main(int argc, char *argv[]){
 
 	//program is running
 	cout << "@-------------------------------------------------------------@" << endl;
-	cout << "| hCAVIAR!		| 	   beta version         |  10/Apr/2018| " << endl;
+	cout << "| hCAVIAR!		| 	   beta version         |  18/Dec/2024| " << endl;
 	cout << "|-------------------------------------------------------------|" << endl;
 	cout << "| (C) 2024 Wanson Choi, GNU General Public License, v2 |" << endl;
 	cout << "|-------------------------------------------------------------|" << endl;
@@ -94,6 +97,7 @@ int main(int argc, char *argv[]){
 
 	// totalCausalSNP = 2;
 
+	// cout << "NCP: " << NCP << endl;
 
 	cout << "\n[" << current_time() << "]: Start.\n";
 

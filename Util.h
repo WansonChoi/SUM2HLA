@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <vector>
 
 unsigned long long comb(int n, int k);
 

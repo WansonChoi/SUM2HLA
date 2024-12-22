@@ -79,6 +79,7 @@ double hCaviarModel::iterate_configures_given_N_causal() {
 	double sumLikelihood_N_causal = 0.0;
 
 	const unsigned long long N_configures = comb(snpCount, N_causal);
+	cout << "N_configures: " << N_configures << endl;
 
 	vector<bool> a_configure;
 	a_configure.resize(snpCount, 0);

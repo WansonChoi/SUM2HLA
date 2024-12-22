@@ -1,6 +1,7 @@
 #include <iostream>
 #include <map>
 #include <fstream>
+#include <iomanip>
 #include "Util.h"
 #include "hCaviarModel.h"
 using namespace std;

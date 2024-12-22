@@ -1,7 +1,8 @@
 CXX = g++
 CXXFLAGS_debug = -Wall -g -std=c++17 -DARMA_DONT_USE_WRAPPER
 CXXFLAGS = -Wall -O3 -std=c++17 -DARMA_DONT_USE_WRAPPER
-INCLUDES = -I/Users/wansonchoi/Git_Projects/caviar/CAVIAR-C++ -I/Users/wansonchoi/Git_Projects/caviar/CAVIAR-C++/armadillo/include
+#INCLUDES = -I/Users/wansonchoi/Git_Projects/caviar/CAVIAR-C++ -I/Users/wansonchoi/Git_Projects/caviar/CAVIAR-C++/armadillo/include
+INCLUDES = -I./ -I./armadillo/include
 LDFLAGS = -llapack -lblas -lgslcblas -lgsl
 
 # 소스 파일
