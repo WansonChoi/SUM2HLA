@@ -63,7 +63,16 @@ int main(int argc, char *argv[]){
 			case ':':
 			case '?':
 			case 'n':
-				NCP = atof(optarg);
+				                try {
+                    NCP = std::stod(optarg);
+                } catch (const std::invalid_argument& e) {
+                    std::cerr << "Error: Invalid argument for -n. Must be a valid number." << std::endl;
+                    exit(1);
+                } catch (const std::out_of_range& e) {
+                    std::cerr << "Error: Argument for -n is out of range." << std::endl;
+                    exit(1);
+                }
+                break;
 			default:
 				cout << "Strange" << endl;
 				break;
@@ -97,7 +106,7 @@ int main(int argc, char *argv[]){
 
 	// totalCausalSNP = 2;
 
-	// cout << "NCP: " << NCP << endl;
+	cout << "NCP: " << NCP << endl;
 
 	cout << "\n[" << current_time() << "]: Start.\n";
 
