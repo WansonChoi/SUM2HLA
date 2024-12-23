@@ -97,11 +97,17 @@ struct hCaviarModel{
 
 	void set_ncp_mean_vector(const std::vector<bool>& _a_configure);
 
-	void export_result_N_causal(const std::string&);
+	void fwrite_logLikelihood(const std::string&);
 
+	// Static functions
 	static double addlogSpace(double, double);
 
 
+	// Plain Cavaiar
+	double computeTotalLikelihood(int _totalCausalSNP);
+	static int nextBinary(int* data, int size);
+	double fastLikelihood(int* configure, double* stat, double NCP);
+	double fracdmvnorm(arma::mat Z, arma::mat mean, arma::mat R, arma::mat diagC, double NCP);
 
 	// void printHist2File(string);
 	// void printPost2File(string);

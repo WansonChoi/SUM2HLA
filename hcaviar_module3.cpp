@@ -1,3 +1,5 @@
+// hCAVIAR_fwrite
+
 #include <iostream>
 #include <string>
 #include <unistd.h>
@@ -6,7 +8,6 @@
 # include "hcaviar_main.h"
 #include "Util.h"
 using namespace std;
-
 
 int main(int argc, char *argv[]){
 
@@ -17,11 +18,11 @@ int main(int argc, char *argv[]){
 	double gamma = 0.01;
 	double rho = 0.95;
 	bool histFlag = false;
-	int oc = 0;	
+	int oc = 0;
 	string ldFile = "";
 	string zFile  = "";
 	string outputFileName = "";
-	string geneMapFile = "";	
+	string geneMapFile = "";
 
 	while ((oc = getopt(argc, argv, "vhl:o:z:g:r:c:f:n:")) != -1) {
 		switch (oc) {
@@ -88,7 +89,7 @@ int main(int argc, char *argv[]){
 	cout << "|-------------------------------------------------------------|" << endl;
 	cout << "| For documentation, citation & bug-report instructions:      |" << endl;
 	cout << "| 		http://genetics.cs.ucla.edu/caviar/           |" << endl;
-	cout << "@-------------------------------------------------------------@" << endl;	
+	cout << "@-------------------------------------------------------------@" << endl;
 
 	// for test (Hard-coding)
 	// ldFile = "./sample_data/50_LD.header.PSD.txt";
@@ -104,17 +105,14 @@ int main(int argc, char *argv[]){
 	// outputFileName = "./sample_data/IJoined.1kG_vs_Yuki_RA.M23975.Z_fixed.EUR.CLUMP.20241218.test";
 
 
-	// totalCausalSNP = 2;
-
 	cout << "NCP: " << NCP << endl;
 
 	cout << "\n[" << current_time() << "]: Start.\n";
 
-	hcaviar_main(ldFile, zFile, outputFileName,
+	hcaviar_main_3(ldFile, zFile, outputFileName,
 		totalCausalSNP, NCP, rho, histFlag, gamma);
 
 	cout << "\n[" << current_time() << "]: End.\n";
-
 
 
 

@@ -124,3 +124,84 @@ bool hcaviar_main(const string& _ldFile, const string& _zFile, const string& _ou
 
 	return true;
 }
+
+
+
+bool hcaviar_main_2(const string& _ldFile, const string& _zFile, const string& _outputFileName,
+	int _totalCausalSNP, double _NCP, double _rho, bool _histFlag, double _gamma)
+{
+	// [0] load data
+
+	// (0-1) load LD matrix
+	LDMatrix ldmatrix(_ldFile);
+
+	if (ldmatrix.M < _totalCausalSNP) {
+		throw runtime_error(
+			"The # of causal SNPs ('-c') should be less than the total # of the given SNPs.");
+	}
+
+
+
+	// (0-2) GWAS Z-score matrix
+	GWAS_Z_observed Z_obs(_zFile);
+	Z_obs.sort_z_scores(ldmatrix.col_idx_SNP);
+
+
+
+
+
+
+	return true;
+
+};
+
+
+
+bool hcaviar_main_3(const string& _ldFile, const string& _zFile, const string& _outputFileName,
+	int _totalCausalSNP, double _NCP, double _rho, bool _histFlag, double _gamma)
+{
+	// [0] load data
+
+	// (0-1) load LD matrix
+	LDMatrix ldmatrix(_ldFile);
+
+	if (ldmatrix.M < _totalCausalSNP) {
+		throw runtime_error(
+			"The # of causal SNPs ('-c') should be less than the total # of the given SNPs.");
+	}
+
+	// (0-2) GWAS Z-score matrix
+	GWAS_Z_observed Z_obs(_zFile);
+	Z_obs.sort_z_scores(ldmatrix.col_idx_SNP);
+
+
+
+	// [1; Main iteration] calculate posterior with the hCaviarModel instance.
+
+	// (1-1) class static (global) 변수들 초기화. (이 함수에서는 엄밀히 의미 없음)
+
+	// hCaviarModel::postValues_global.resize(ldmatrix.M, 0.0);
+	// hCaviarModel::histValues_global.resize(_totalCausalSNP + 1, 0.0);
+
+
+	// (1-2) generate a "hCaviarModel" instance (with those two input data.)
+	hCaviarModel hcaviar_temp(
+		ldmatrix, Z_obs,
+		_outputFileName, 0, _NCP, _rho, _histFlag, _gamma
+	);
+
+	for (int _N_causal = 1; _N_causal <= _totalCausalSNP; _N_causal++) {
+
+		cout << "\n===== N_causal: " << _N_causal << endl;
+
+		// resetting the temp instance
+		hcaviar_temp.N_causal = _N_causal;
+		hcaviar_temp.reset_postValues();
+
+		hcaviar_temp.fwrite_logLikelihood(_outputFileName + ".c" + to_string(hcaviar_temp.N_causal));
+
+	}
+
+
+	return 1;
+}
