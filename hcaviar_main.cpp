@@ -190,17 +190,21 @@ bool hcaviar_main_3(const string& _ldFile, const string& _zFile, const string& _
 		_outputFileName, 0, _NCP, _rho, _histFlag, _gamma
 	);
 
-	for (int _N_causal = 1; _N_causal <= _totalCausalSNP; _N_causal++) {
 
-		cout << "\n===== N_causal: " << _N_causal << endl;
+	/*
+	- fwrite module은 a `N_causal` value에 대해서만 작동하도록 의도함.
+		- (cf) <=> `hcaviar_main()` => for (int _N_causal = 1; _N_causal <= _totalCausalSNP; ++_N_causal)
 
-		// resetting the temp instance
-		hcaviar_temp.N_causal = _N_causal;
-		hcaviar_temp.reset_postValues();
+	 */
 
-		hcaviar_temp.fwrite_logLikelihood(_outputFileName + ".c" + to_string(hcaviar_temp.N_causal));
+	cout << "N_causal: " << _totalCausalSNP << " (only)" << endl;
 
-	}
+	// resetting the temp instance
+	hcaviar_temp.N_causal = _totalCausalSNP;
+	hcaviar_temp.reset_postValues();
+
+	hcaviar_temp.fwrite_logLikelihood(_outputFileName + ".c" + to_string(hcaviar_temp.N_causal));
+
 
 
 	return 1;

@@ -106,6 +106,7 @@ int main(int argc, char *argv[]){
 
 
 	cout << "NCP: " << NCP << endl;
+    cout << "N_causal: " << totalCausalSNP << " (only)" << endl;
 
 	cout << "\n[" << current_time() << "]: Start.\n";
 
