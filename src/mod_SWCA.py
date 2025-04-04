@@ -10,7 +10,7 @@ from datetime import datetime
 import subprocess
 import json
 
-import mod_SummaryImp
+import src.mod_SummaryImp as mod_SummaryImp
 
 
 

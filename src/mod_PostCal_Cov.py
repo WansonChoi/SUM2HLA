@@ -12,8 +12,8 @@ import jax.numpy as jnp
 from jax import jit, vmap, lax
 
 
-from mod_LDmatrix_class import LDmatrix
-from mod_GWAS_summary import GWAS_summary
+from src.mod_LDmatrix_class import LDmatrix
+from src.mod_GWAS_summary import GWAS_summary
 
 
 ########## [] Causal configuration generation 

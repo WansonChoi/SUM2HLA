@@ -5,7 +5,7 @@ import math
 
 from datetime import datetime
 
-from mod_LDmatrix_class import LDmatrix 
+from src.mod_LDmatrix_class import LDmatrix
 
 
 class GWAS_summary():

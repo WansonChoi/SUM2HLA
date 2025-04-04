@@ -7,16 +7,15 @@ import json
 from datetime import datetime
 from shutil import which
 
-import mod_hCAVIAR_prepr
+import src.mod_hCAVIAR_prepr
 # import mod_Util
-import mod_LDmatrix_class
-import mod_GWAS_summary
+# import mod_LDmatrix_class
+# import mod_GWAS_summary
 
-from mod_LDmatrix_class import LDmatrix
-from mod_GWAS_summary import GWAS_summary
-import mod_PostCal_Cov
-
-import mod_SWCA
+from src.mod_LDmatrix_class import LDmatrix
+from src.mod_GWAS_summary import GWAS_summary
+import src.mod_PostCal_Cov
+import src.mod_SWCA
 
 
 ### use GPU

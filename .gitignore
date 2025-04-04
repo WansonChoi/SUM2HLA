@@ -1,8 +1,8 @@
 .DS_Store
 *.o
 
+
 # directories
 .idea/
-release/
-debug/
+__pycache__/
 tests/
