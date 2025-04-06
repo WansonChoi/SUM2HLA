@@ -6,6 +6,8 @@ import math
 from datetime import datetime
 
 from src.mod_LDmatrix_class import LDmatrix
+from src.mod_Util import get_N_of_ss
+
 
 
 class GWAS_summary():
@@ -14,6 +16,7 @@ class GWAS_summary():
 
         ########## Main variables
         self.sr_GWAS_summary = None
+        self.N = None
 
 
         ########## Main
@@ -29,6 +32,8 @@ class GWAS_summary():
                     .set_index("SNP") \
                     .squeeze('columns')
 
+            self.N = get_N_of_ss(_fpath)
+
         elif isinstance(_fpath, pd.DataFrame):
 
             self.sr_GWAS_summary = \
@@ -38,28 +43,27 @@ class GWAS_summary():
                     .set_index("SNP") \
                     .squeeze('columns')
 
-        elif isinstance(_fpath, pd.Series):
-
-            self.sr_GWAS_summary = _fpath
+            self.N = _fpath['N'].iat[0]
 
         else:
             raise ValueError("Wrong GWAS input!")
 
 
         
-        ##### (2)  subset and set order to that of the LD matrix
+        ##### (2) match the SNPs to that of the LD matrix
         sr_SNP_ToExtract = _LDmatrix.df_LD_SNP.columns.intersection(self.sr_GWAS_summary.index)
         self.sr_GWAS_summary = self.sr_GWAS_summary.loc[sr_SNP_ToExtract]
+            ## 여기서 LDmatrix의 SNPs들로 subset 되고, LDmatrix SNP order로 맞춰짐.
 
-        ## 위에서 LDmatrix의 SNPs들로 subset 되고, LDmatrix SNP order로 맞춰짐.
 
-    
+
+
 
     def __repr__(self):
 
-        return \
-            "Loaded GWAS summary:\n" \
-            "{}".format(self.sr_GWAS_summary)
+        str_ss = f"Loaded GWAS summary: {self.sr_GWAS_summary}"
+        str_N  = f"N: {self.N}"
 
-        # print()
-        # print(self.sr_GWAS_summary)
+        l_str = [str_ss, str_N]
+
+        return '\n'.join(l_str)

@@ -87,17 +87,18 @@ class LDmatrix():
     def print_info(self):
         
         print("df_LD:")
-        display(self.df_LD)
+        print(self.df_LD)
         print(self.df_LD.shape)
         
         print("df_LD_SNP:")
-        display(self.df_LD_SNP)
+        print(self.df_LD_SNP)
         print(self.df_LD_SNP.shape)
         
         # print("df_LD_SNP_inv:")
         # display(self.df_LD_SNP_inv)
         
         # print("term1: ", self.term1)
+        print(self.l_ix_SNPs)
         
         print("All eigenvalues positive? (is PSD?): ", np.all(self.eigenvalues > 0))
         print("term2: ", self.term2)        

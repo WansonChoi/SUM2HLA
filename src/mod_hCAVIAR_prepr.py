@@ -42,6 +42,8 @@ from shutil import which
 
 from datetime import datetime
 
+from src.mod_Util import is_HLA_locus
+
 
 
 
@@ -127,10 +129,10 @@ def match_eff_direc_GWASsummary(_df_GWASsummary, _df_bim_LD_curated):
         # display(df_bim_LD_curated_2[ df_bim_LD_curated_2['BP'] == 30313268 ])
         
         print("BP duplicated: ", df_GWASsummary_2['BP'].duplicated().any())
-        print("Wrong match")
-        
-        return -1
-    
+
+        raise ValueError("There is BP-duplicated marker in the GWAS summary!")
+
+
     
     ### (3) merge 준비
     
@@ -148,7 +150,7 @@ def match_eff_direc_GWASsummary(_df_GWASsummary, _df_bim_LD_curated):
     df_mg0 = df_GWASsummary_3.merge(
         _df_bim_LD_curated.drop(['GD'], axis=1),
         on=['CHR', 'BP'],
-        suffixes=['_GWAS', '_LD']
+        suffixes=('_GWAS', '_LD')
     )
     # display(df_mg0)
     
@@ -186,7 +188,7 @@ df_eff_direc_panel_RA_EUR.to_csv(
 def subset_matched_ss(_fPath_ss_matched, _fPath_clumped) -> pd.DataFrame:
     
     df_ss_matched_RA = pd.read_csv(_fPath_ss_matched, sep='\t', header=0)
-    df_clumpped_RA = pd.read_csv(_fPath_clumped, sep='\s+', header=0)
+    df_clumpped_RA = pd.read_csv(_fPath_clumped, sep=r'\s+', header=0)
 
     # display(df_ss_matched_RA)
     # display(df_clumpped_RA)
@@ -234,29 +236,6 @@ def split_summary_byLDtect(_df_matched, _d_LDtect=d_LDtect_HLAregion_hg19_2):
         d_RETURN[_label] = df_temp.copy()
     
     return d_RETURN
-    
-
-    
-"""
-### RA_Yuki_EUR + T1DGC / clumpped
-
-df_RA_clumped_EUR = pd.read_csv(
-    "20250109_prototype_v2/CLUMP.RA_Yuki_EUR+T1DGC.hg19.M4988.sumstats2.clumped",
-    sep='\s+', header=0
-)
-
-d_clumped_EUR_regions = split_summary_byLDtect(df_RA_clumped_EUR)
-# display(d_clumped_EUR_regions)
-
-for i, (k, _df) in enumerate(d_clumped_EUR_regions.items()):
-    print("===[{}]: {}".format(i, k))
-    display(_df)
-    
-    out_temp = "20250109_prototype_v2/CLUMP.RA_Yuki_EUR+T1DGC.hg19.M4988.sumstats2.{}.clumped".format(k)
-    print(out_temp)
-    
-    _df.to_csv(out_temp, sep='\t', header=True, index=False, na_rep="NA")
-"""
 
 
 
@@ -274,7 +253,7 @@ def subset_LDpanel_SNPs(_d_fPath_LD, _fpath_ss, _col_SNP_ss="SNP_LD"):
     ##### (0) load
 
     ### (0-1) ss (or clumping result) <= 결국 SNP set column이 필요함.
-    df_ss = pd.read_csv(_fpath_ss, sep='\s+', header=0)
+    df_ss = pd.read_csv(_fpath_ss, sep=r'\s+', header=0)
     # display(df_ss)
     
     
@@ -426,22 +405,30 @@ def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
              _f_do_clump = True,
              _plink = "~/miniconda3/bin/plink"):
 
-    df_ss = pd.read_csv(_fpath_ss, sep='\t', header=0) \
-                .rename({"STAT": "Z"}, axis=1)
-    df_bim_LD_whole = pd.read_csv(
-        _fpath_LD_SNP_bim, sep='\t', header=None,
+    df_ss = pd.read_csv(_fpath_ss, sep='\t', header=0).rename({"STAT": "Z"}, axis=1)
+
+    df_ref_bim_SNP_HLA = pd.read_csv(
+        _fpath_LD_SNP_HLA + ".bim", sep='\t', header=None,
         names=['CHR', 'SNP', 'GD', 'BP', 'A1', 'A2']
     )
+
+    f_is_HLA_locus = is_HLA_locus(df_ref_bim_SNP_HLA['SNP'])
+    df_ref_bim_SNP = df_ref_bim_SNP_HLA[~f_is_HLA_locus]
+
+    # df_ref_bim_SNP = pd.read_csv(
+    #     _fpath_LD_SNP_bim, sep='\t', header=None,
+    #     names=['CHR', 'SNP', 'GD', 'BP', 'A1', 'A2']
+    # )
     
 
 
     ##### (1) match: a GWAS summary vs. the curated LD panel (-> '*.sumstats2')
     
-    df_matched = match_eff_direc_GWASsummary(df_ss, df_bim_LD_whole)
+    df_matched = match_eff_direc_GWASsummary(df_ss, df_ref_bim_SNP)
     out_matched = _out_prefix_ss + ".sumstats2"
-
     # display(df_matched)
 
+    ## export
     df_matched.to_csv(out_matched, sep='\t', header=True, index=False, na_rep="NA")
 
     

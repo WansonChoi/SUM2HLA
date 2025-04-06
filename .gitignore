@@ -1,8 +1,9 @@
+# Files
 .DS_Store
-*.o
-
 
 # directories
 .idea/
 __pycache__/
 tests/
+data/
+external_software/

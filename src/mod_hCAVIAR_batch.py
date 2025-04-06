@@ -7,34 +7,20 @@ import json
 from datetime import datetime
 from shutil import which
 
-import src.mod_hCAVIAR_prepr
-# import mod_Util
-# import mod_LDmatrix_class
-# import mod_GWAS_summary
-
+import src.mod_hCAVIAR_prepr as mod_hCAVIAR_prepr
 from src.mod_LDmatrix_class import LDmatrix
 from src.mod_GWAS_summary import GWAS_summary
-import src.mod_PostCal_Cov
-import src.mod_SWCA
-
-
-### use GPU
-import jax
-from jax.lib import xla_bridge
-
-# os.environ["CUDA_VISIBLE_DEVICES"] = "1" # a singleimport jax
-# print(jax.devices())
-# print(jax.__version__)
-# print(xla_bridge.get_backend().platform)
+import src.mod_PostCal_Cov as mod_PostCal_Cov
+import src.mod_SWCA as mod_SWCA
 
 
 
-class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
+class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
-    def __init__(self, _ss_raw, _out_prefix, _ethnicity, _N, _out_json=None,
-                _batch_size=50, _bfile_ToClump=None,
-                 _f_run_SWCR=True, _f_do_clump=True,
-                ):
+    def __init__(self, _ss_raw, _ref_prefix, _out_prefix,
+                 _batch_size=50, _f_run_SWCR=True,
+                 _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
+    ):
 
         ##### output path and prefix
         self.out_prefix = _out_prefix
@@ -43,37 +29,11 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
         self.out_prefix_LD = None
 
 
-        ##### Raw LD files (before curation)
-        ## 어차피 load해야할 대상이 정해져 있음. (최종 publish할 때는 clumping부분을 어떻게 해줄지 모르겠네.)
-        if _ethnicity == 'EUR':
-
-            ### T1DGC
-            self.d_fpath_LD = {"whole": "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/LD.REF_T1DGC.hg19.SNP+HLA.NoNA.PSD.ld"}
-            self.fpath_LD_SNP_bim = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_T1DGC.hg19.bim"
-            self.fpath_LD_SNP_HLA = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_T1DGC.hg19.SNP+HLA" if _bfile_ToClump is None else _bfile_ToClump
-            self.fpath_LD_MAF = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_T1DGC.hg19.SNP+HLA.FRQ.frq"
-
-            self.out_prefix_LD = _out_prefix + ".LD.REF_T1DGC.hg19.SNP+HLA.NoNA.PSD"
-
-            ### 1kG - EUR
-            # self.d_fpath_LD = {"whole": "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/LD.REF_1kG.EUR.hg19.SNP+HLA.NoNA.PSD.ld"}
-            # self.fpath_LD_SNP_bim = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_1kG.EUR.hg19.bim"
-            # self.fpath_LD_SNP_HLA = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_1kG.EUR.hg19.SNP+HLA" if _bfile_ToClump is None else _bfile_ToClump
-            # self.fpath_LD_MAF = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_1kG.EUR.hg19.SNP+HLA.FRQ.frq"
-
-            # self.out_prefix_LD = _out_prefix + ".LD.1kG_EUR.hg19.SNP+HLA.NoNA.PSD"
-
-        
-        elif _ethnicity == 'EAS':
-
-            self.d_fpath_LD = {"whole": "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/LD.REF_HAN_China.hg19.SNP+HLA.NoNA.PSD.ld"}
-            self.fpath_LD_SNP_bim = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_HAN_China.hg19.bim"
-            self.fpath_LD_SNP_HLA = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_HAN_China.hg19.SNP+HLA" if _bfile_ToClump is None else _bfile_ToClump
-            self.fpath_LD_MAF = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_HAN_China.hg19.SNP+HLA.FRQ.frq"
-
-            self.out_prefix_LD = _out_prefix + ".LD.REF_HAN_China.hg19.SNP+HLA.NoNA.PSD"
-        else:
-            raise ValueError("Wrong `_ethnicity` value! ({})".format(_ethnicity))
+        ##### The reference dataset.
+        self.d_fpath_LD = {"whole": _ref_prefix + ".NoNA.PSD.ld"} # 예전에 HLA sub-region 별로 짤라서 활용하던대로 둠.
+        self.fpath_LD_SNP_HLA = _ref_prefix if _bfile_ToClump is None else _bfile_ToClump
+        self.fpath_LD_MAF = _ref_prefix + ".FRQ.frq"
+        self.out_prefix_LD = _out_prefix + ".LD"
 
         
         ##### Raw GWAS summary file
@@ -103,8 +63,8 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
 
 
         ##### External software
-        self.plink = "/home/wschoi/miniconda3/bin/plink"
-        self.gcta64 = "/data02/wschoi/_ClusterPhes_v4/gcta-1.94.3-linux-kernel-3-x86_64/gcta64"
+        self.plink = which("plink")
+        self.gcta64 = which("gcta")
 
         
         ##### Output (Accumulator)
@@ -115,7 +75,7 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
         self.OUT_PIP_PP_fpath = {_N_causal: {'whole': None} for _N_causal in range(1, self.N_causal + 1)} # filepath
 
         ##### SWCR with GCTA "--cojo-cond"
-        self.N = _N # sample size
+        # self.N = _N   # `GWAS_summary` class 내에서 가져오도록 바꿈.
         self.ma = None
         self.l_secondary_signals = []
         self.fpath_secondary_signals = None
@@ -128,9 +88,9 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
         self.f_do_clump = _f_do_clump
 
 
-    
 
-    
+
+
     def run_hCAVIAR_prepr(self):
         
         ##### Interface with the `mod_hCAVIAR_prepr.hCAVIAR_prepr()`.
@@ -139,7 +99,7 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
         self.out_matched, self.out_ToClump, self.out_clumped, self.out_json = \
             mod_hCAVIAR_prepr.__MAIN__(
                 _fpath_ss=self.sumstats1,
-                _d_fpath_LD=self.d_fpath_LD, _fpath_LD_SNP_bim=self.fpath_LD_SNP_bim, _fpath_LD_SNP_HLA=self.fpath_LD_SNP_HLA,
+                _d_fpath_LD=self.d_fpath_LD, _fpath_LD_SNP_bim=None, _fpath_LD_SNP_HLA=self.fpath_LD_SNP_HLA,
                 _out_prefix_ss=self.out_prefix, _out_prefix_LD=self.out_prefix_LD,
                 _f_do_clump=self.f_do_clump,
                 _plink=self.plink
@@ -172,7 +132,7 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
             _fpath_ld_MAF=self.fpath_LD_MAF,
             _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'],
             _out_prefix=self.out_prefix,
-            _N=self.N,
+            _N=self.GWAS_summary.N,
             _gcta=self.gcta64
         )
 
@@ -197,7 +157,7 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
 
     
     
-    def compute(self):
+    def __MAIN__(self):
 
         ##### has the curated main input?
         if self.out_json == None:
@@ -214,7 +174,7 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
         self.GWAS_summary = GWAS_summary(d_curated_input['whole']['sumstats'], self.LDmatrix)
 
 
-        
+
         ##### calculate LL_0
         self.LL_0 = \
             self.LDmatrix.term2 \
@@ -250,7 +210,7 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
                 "LL+Lprior": self.OUT_PIP[_N_causal]
             })
 
-            df_PP.to_csv(self.out_prefix + ".before_postprepr.txt", sep='\t', header=True, index=False, na_rep="NA")
+            # df_PP.to_csv(self.out_prefix + ".before_postprepr.txt", sep='\t', header=True, index=False, na_rep="NA")
     
             self.OUT_PIP_PP[_N_causal] = \
                 mod_PostCal_Cov.postprepr_LL(df_PP, _l_type=['whole']) # 여기서 return되는건 DataFrame의 dictionary임.
@@ -279,21 +239,21 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
     def __repr__(self):
 
         str_raw_ss = \
-            "- Raw input GWAS summary: {}".format(self.sumstats1)
+            "- GWAS summary: {}".format(self.sumstats1)
 
-        str_raw_LD = \
-            "- Raw LD file: {}".format(self.d_fpath_LD)
+        str_ref_LD = \
+            "- Reference LD file: {}".format(self.d_fpath_LD)
 
-        str_ToClump = \
-            "- Clumping genotype: {}".format(self.fpath_LD_SNP_HLA) if self.f_do_clump else \
+        str_ref_GT = \
+            "- Reference genotype: {}".format(self.fpath_LD_SNP_HLA) if self.f_do_clump else \
             "- No Clumping!"
 
         
         str_curated_input = \
-            "- Curated input: {}".format(self.out_json)
+            "- Curated input: {}".format(self.out_json) if bool(self.out_json) else ""
 
         str_PP = \
-            "- Output - Posterior probability: {}".format(self.OUT_PIP_PP_fpath)
+            "- Output Posterior probability: {}".format(self.OUT_PIP_PP_fpath)
 
         ### external software
         str_plink = \
@@ -302,7 +262,7 @@ class hCAVIAR_batch(): # a single run of hCAVIAR on Linux.
             "- gcta64: {}".format(self.gcta64)
         
         
-        l_RETURN = [str_raw_ss, str_raw_LD, str_ToClump, str_curated_input, str_PP,
+        l_RETURN = [str_raw_ss, str_ref_LD, str_ref_GT, str_curated_input, str_PP,
                    str_plink, str_gcta64]
 
         return '\n'.join(l_RETURN)
