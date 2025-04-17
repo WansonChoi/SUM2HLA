@@ -82,7 +82,7 @@ def make_COJO_input(_df_ss_imputed_HLA, _df_MAF, _N, _df_ss_SNP=None, _maf=0.01)
     
     
     
-    ##### (3) Unimputed (a Clumped GWAS summary)
+    ##### (3) Unimputed (the clumped SNPs)
     
     ## SNPs들의 summary가 주어지면 얘도 concat
     if isinstance(_df_ss_SNP, pd.DataFrame):

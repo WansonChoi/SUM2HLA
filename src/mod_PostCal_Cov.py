@@ -202,7 +202,7 @@ def generate_LD_matrices_jax(_l_batch_configures:jnp.array, _df_LD:jnp.array, _l
     
     batch_size = len(_l_batch_configures)  # 배치 크기
     K = _df_LD.shape[0]  # 전체 행렬 크기
-    M = len(_l_ix_SNPs)  # Subset 크기
+    # M = len(_l_ix_SNPs)  # Subset 크기
     
     # ✅ (1) diagC 생성: (batch_size, K, K)
     diagC = jnp.zeros((batch_size, K, K))
@@ -218,12 +218,14 @@ def generate_LD_matrices_jax(_l_batch_configures:jnp.array, _df_LD:jnp.array, _l
     R = _df_LD  # (K, K) / numpy array를 jnp array로 변환.
     R_new = R + jnp.matmul(jnp.matmul(R, diagC), R)  # (batch_size, K, K)
 
-    # ✅ (4) Subsetting (batch-wise로 (K, K) → (M, M) 변환)
-    SNP_indices = _l_ix_SNPs  # (M,)
-    LD_matrices = R_new[:, SNP_indices[:, None], SNP_indices]  # (batch_size, M, M)
+    if _l_ix_SNPs == None:
+        return R_new
+    else:
+        # ✅ (4) Subsetting (batch-wise로 (K, K) → (M, M) 변환)
+        SNP_indices = _l_ix_SNPs  # (M,)
+        LD_matrices = R_new[:, SNP_indices[:, None], SNP_indices]  # (batch_size, M, M)
 
-    return LD_matrices
-
+        return LD_matrices
 
 
 @jit
