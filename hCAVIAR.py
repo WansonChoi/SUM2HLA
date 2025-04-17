@@ -33,7 +33,7 @@ if __name__ == "__main__":
 
     ### Optional
     parser.add_argument("--batch-size", help="The # of causal configurations to process in a batch.",
-                        default=50, metavar="")
+                        default=30, metavar="")
 
     parser.add_argument("--skip-SWCA", help="Skip the StepWise Conditional Analysis (SWCA).",
                         action="store_true")

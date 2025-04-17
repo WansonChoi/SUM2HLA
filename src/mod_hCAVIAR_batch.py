@@ -18,8 +18,9 @@ import src.mod_SWCA as mod_SWCA
 class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
     def __init__(self, _ss_raw, _ref_prefix, _out_prefix,
-                 _batch_size=50, _f_run_SWCR=True,
+                 _batch_size=30, _f_run_SWCR=True,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
+                 _plink=None, _gcta=None
     ):
 
         ##### output path and prefix
@@ -63,8 +64,8 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
 
         ##### External software
-        self.plink = which("plink")
-        self.gcta64 = which("gcta")
+        self.plink = which("plink") if bool(which("plink")) else _plink
+        self.gcta64 = which("gcta") if bool(which("gcta")) else _gcta
 
         
         ##### Output (Accumulator)
@@ -266,3 +267,13 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
                    str_plink, str_gcta64]
 
         return '\n'.join(l_RETURN)
+
+
+
+    def set_PLINK_path(self, _plink):
+        self.plink = _plink
+        return 0
+
+    def set_GCTA_path(self, _gcta):
+        self.gcta64 = _gcta
+        return 0

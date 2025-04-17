@@ -2,6 +2,7 @@ import os, sys, re
 import numpy as np
 import pandas as pd
 import json
+import subprocess
 
 from datetime import datetime
 
@@ -68,12 +69,33 @@ def is_psd(matrix):
     except np.linalg.LinAlgError:
         return False
 
-    
-
-
 
 
 ### PLINK
+def run_PLINK_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix, _plink):
+
+    cmd = [
+        _plink,
+        "--clump", _fpath_ToClump,
+        "--bfile", _fpath_LD_SNP_HLA,
+        "--out", _out_prefix,
+        "--allow-no-sex", "--keep-allele-order"
+    ]
+
+    try:
+        subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+
+    except subprocess.CalledProcessError as e:
+        print(json.dumps(cmd, indent='\t'))
+        raise e
+
+    # except: # 다른 에러들도 마지막 command보여주고 주어진 error 보여주도록
+    #     print(json.dumps(cmd, indent='\t'))
+    #     raise
+
+    return _out_prefix + ".clumped"
+
+
 
 def split_summary(_df_ss, _col_BP='BP') -> dict:
     

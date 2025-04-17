@@ -33,6 +33,7 @@
 
 import os, sys, re
 import numpy as np
+import scipy as sp
 import pandas as pd
 import math
 import json
@@ -42,7 +43,7 @@ from shutil import which
 
 from datetime import datetime
 
-from src.mod_Util import is_HLA_locus
+from src.mod_Util import is_HLA_locus, run_PLINK_clump
 
 
 
@@ -407,6 +408,13 @@ def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
 
     df_ss = pd.read_csv(_fpath_ss, sep='\t', header=0).rename({"STAT": "Z"}, axis=1)
 
+    ## Error when there is no any signal.
+    arr_P = 2 * sp.stats.norm.cdf( -df_ss['Z'].abs() )
+    N_signals = np.count_nonzero(arr_P < 5e-8)
+    if N_signals == 0:
+        raise ValueError(f"There is no any signal in the GWAS summary! ({_fpath_ss})")
+
+    
     df_ref_bim_SNP_HLA = pd.read_csv(
         _fpath_LD_SNP_HLA + ".bim", sep='\t', header=None,
         names=['CHR', 'SNP', 'GD', 'BP', 'A1', 'A2']
@@ -440,44 +448,7 @@ def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
             .to_csv(_out_prefix_ss + ".ToClump", sep='\t', header=True, index=False, na_rep="NA")
     
         out_ToClump = _out_prefix_ss + ".ToClump"
-        
-        
-        def run_PLINK_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out):
-                    
-            # cmd = "{PLINK} \\\n" \
-            #     "--clump {clump} \\\n" \
-            #     "--bfile {bfile} \\\n" \
-            #     "--out {out} \\\n" \
-            #     "--allow-no-sex --keep-allele-order" \
-            #     .format(PLINK=_plink, 
-            #             clump=_fpath_ToClump, 
-            #             bfile=_fpath_LD_SNP_HLA, 
-            #             out=_out)
-            # print(cmd)
-            # os.system(cmd)
-    
-            cmd = [
-                _plink, 
-                "--clump", _fpath_ToClump,
-                "--bfile", _fpath_LD_SNP_HLA,
-                "--out", _out,
-                "--allow-no-sex", "--keep-allele-order"
-            ]
-    
-            
-            try:
-                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
-                
-            except subprocess.CalledProcessError as e:
-                # 에러 메시지를 Jupyter Notebook에 출력
-                print(f"Error occurred: {e}")
-    
-                print(json.dumps(cmd, indent='\t'))
-                
-            
-            return _out + ".clumped"
-        
-        out_clumped = run_PLINK_clump(out_ToClump, _fpath_LD_SNP_HLA, _out_prefix_ss)
+        out_clumped = run_PLINK_clump(out_ToClump, _fpath_LD_SNP_HLA, _out_prefix_ss, _plink)
         # print(out_clumped)
 
     else:

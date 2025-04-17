@@ -1,5 +1,6 @@
 import os, sys, re
 import numpy as np
+import scipy as sp
 import pandas as pd
 import math
 
@@ -17,6 +18,8 @@ class GWAS_summary():
         ########## Main variables
         self.sr_GWAS_summary = None
         self.N = None
+
+        self.N_signals = None
 
 
         ########## Main
@@ -56,6 +59,13 @@ class GWAS_summary():
             ## 여기서 LDmatrix의 SNPs들로 subset 되고, LDmatrix SNP order로 맞춰짐.
 
 
+        ##### (3) count the # of signals
+        # arr_P = 2 * sp.stats.norm.cdf( -self.sr_GWAS_summary.abs() )
+        # self.N_signals = np.count_nonzero(arr_P < 5e-8)
+
+        # if self.N_signals == 0:
+        #     raise ValueError(f"There is no signal in the GWAS summary! ({_fpath})")
+        
 
 
 
@@ -63,6 +73,7 @@ class GWAS_summary():
 
         str_ss = f"Loaded GWAS summary: {self.sr_GWAS_summary}"
         str_N  = f"N: {self.N}"
+        # str_N_signals  = f"Signal count: {self.N_signals}"
 
         l_str = [str_ss, str_N]
 
