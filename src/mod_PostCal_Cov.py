@@ -455,7 +455,7 @@ def postprepr_LL(_df_result, _rho=0.95,
         .rename_axis("rank", axis=0) \
         .reset_index(drop=False)
     
-    print(df_result_sort.head(10))
+    # print(df_result_sort.head(10))
     # display(df_result_sort.sort_values("LL", ascending=False)) # (Conclusion) 똑같이 나옴, 당연히
     
     

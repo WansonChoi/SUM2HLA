@@ -216,7 +216,7 @@ def __MAIN__(_fpath_cma, _fpath_ref, _fpath_ref_LD, _out_dir,
 
     df_PP_cma = __MAIN__postCalc_SWCA(df_cma_sumstats3, df_LDmatrix_2)
 
-    OUT_PP_cma = join(_out_dir + basename(_fpath_cma) + ".PP")
+    OUT_PP_cma = join(_out_dir, basename(_fpath_cma) + ".PP")
     df_PP_cma.to_csv(OUT_PP_cma, sep='\t', header=True, index=False, na_rep="NA")
 
 
