@@ -128,9 +128,9 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
         self.l_secondary_signals, self.ma = mod_SWCA.__MAIN__(
             _fpath_ss=d_curated_input['whole']['sumstats'],
-            _fpath_ld_matrix=d_curated_input['whole']['ld'],
-            _fpath_ld_bfile=self.fpath_LD_SNP_HLA,
-            _fpath_ld_MAF=self.fpath_LD_MAF,
+            _fpath_ref_ld=d_curated_input['whole']['ld'],
+            _fpath_ref_bfile=self.fpath_LD_SNP_HLA,
+            _fpath_ref_MAF=self.fpath_LD_MAF,
             _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'],
             _out_prefix=self.out_prefix,
             _N=self.GWAS_summary.N,
