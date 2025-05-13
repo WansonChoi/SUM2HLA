@@ -5,9 +5,10 @@ import pandas as pd
 
 import math
 
+import src.mod_Util as mod_Util
 
 
-########## (1) LD panel의 marker set을 SNP + HLA로 나누기
+########## (Deprecated) (1) LD panel의 marker set을 SNP + HLA로 나누기
 
 def partition_LD_marker_set(_sr_summary_marker_set, _sr_LD_marker_set):
     
@@ -29,13 +30,43 @@ def partition_LD_marker_set(_sr_summary_marker_set, _sr_LD_marker_set):
 
 
 
+########## (1) LD panel의 marker set (전체 집합)을 Observed vs. Unobserved HLA markers로 나누기. (2025.05.06.)
+"""
+- 예전에는 SNPs vs. Non-SNPs 들로 분류했고, Non-SNPs == HLA markers들이라 가정했음. (v1)
+- 이후 clumped SNPs들만 주어졌을 때를 test할일이 생김.
+    - 이때 v1때 처럼 분류하면, clumped SNPs들을 제외한 SNPs들이 Non-SNPs들로 분류됨.
+- 이때부터 Observed vs. Unobserved로 나눴고, Unobserved는 HLA markers들만 포함하도록 규정함.
+"""
+
+def partition_LD_marker_set_v2(_sr_summary_marker_set, _sr_LD_marker_set):
+
+    # display(_sr_summary_marker_set)
+    # display(_sr_LD_marker_set)
+
+    ##### flag for SNP markers
+    f_Obs = _sr_LD_marker_set.isin(_sr_summary_marker_set)
+    f_is_HLA_locus = mod_Util.is_HLA_locus(_sr_LD_marker_set)
+
+    ##### Subsetting
+    sr_LD_Obs_markers = _sr_LD_marker_set[f_Obs]
+    sr_LD_Unobs_markers = _sr_LD_marker_set[~f_Obs & f_is_HLA_locus]  # Impute해야할 markers
+        # 예전에는 그냥 ~f_Obs이렇게 짜놨음.
+        # 그랬더니 Obs SNPs들을 MAF-filtering했을 때, 이 filtered된 SNPs들이 Impute할 대상으로 분류됨.
+
+    # display(sr_LD_Obs_markers)
+    # display(sr_LD_Unobs_markers)
+
+    return sr_LD_Obs_markers, sr_LD_Unobs_markers
+
+
+
 ########## (2) LD를 parition한 SNP + HLA set으로 나누기 => 4 marices
 
 def partition_LD_matrix(_df_LD, _sr_LD_SNP_markers, _sr_LD_HLA_markers):
     
-    if _df_LD.shape[0] != _sr_LD_SNP_markers.shape[0] + _sr_LD_HLA_markers.shape[0]:
-        print("Wrong dimension!")
-        return -1
+    # if _df_LD.shape[0] != _sr_LD_SNP_markers.shape[0] + _sr_LD_HLA_markers.shape[0]:
+    #     print("Wrong dimension!")
+    #     return -1
     
     ##### LD: observed
     df_LD_SNP = _df_LD.loc[_sr_LD_SNP_markers, _sr_LD_SNP_markers]
@@ -59,6 +90,8 @@ def calc_conditional_mean_cov(_df_X1_obs, _df_LD_11, _df_LD_12, _df_LD_21, _df_L
     
     if _df_X1_obs.shape[0] != _df_LD_11.shape[0]:
         print("Wrong dimension between the summary and its LD matrix!")
+        print(f"_df_X1_obs: {_df_X1_obs.shape[0]}")
+        print(f"_df_LD_11: {_df_LD_11.shape[0]}")
         return -1
     
     """
@@ -169,22 +202,24 @@ def wrap_up_imputation_with_answer(_df_answer, _df_FRQ, _df_cond_mean_imputed, _
 
 ########## Main (1 ~ 4)
 
-def __MAIN__(_fpath_ss_matched, _fpath_LD, _fpath_MAF=None, _fpath_answer=None):
+def __MAIN__(_fpath_ss_matched, _fpath_ref_LD, _fpath_MAF=None, _fpath_answer=None):
     
     ##### load data
-    df_ss_matched = pd.read_csv(_fpath_ss_matched, sep='\s+', header=0)
+    df_ss_matched = pd.read_csv(_fpath_ss_matched, sep='\s+', header=0) \
+                        if isinstance(_fpath_ss_matched, str) else _fpath_ss_matched
     
     if df_ss_matched['Z_fixed'].isna().any(): # 사실상 CD를 위한 예외처리
         # display(df_ss_matched)
         df_ss_matched.dropna(subset=["Z_fixed"], axis=0, inplace=True) 
     
-    df_LD_PSD = pd.read_csv(_fpath_LD, sep='\t', header=0)
+    df_LD_PSD = pd.read_csv(_fpath_ref_LD, sep='\t', header=0) \
+                    if isinstance(_fpath_ref_LD, str) else _fpath_ref_LD
     df_LD_PSD.index = df_LD_PSD.columns
     
     
     ##### (1) LD panel의 marker set을 SNP + HLA로 나누기
     sr_LD_SNP_markers, sr_LD_HLA_markers = \
-        partition_LD_marker_set(df_ss_matched['SNP_LD'], df_LD_PSD.columns.to_series().reset_index(drop=True))
+        partition_LD_marker_set_v2(df_ss_matched['SNP_LD'], df_LD_PSD.columns.to_series().reset_index(drop=True))
 
     
     ##### (2) LD를 parition한 SNP + HLA set으로 나누기 => 4 marices
