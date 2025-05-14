@@ -2,7 +2,7 @@ from os.path import basename
 from datetime import datetime
 
 import src.check_arguments as check_arguments
-from src.mod_hCAVIAR_batch import hCAVIAR_batch
+from src.hCAVIAR_batch import hCAVIAR_batch
 import argparse, textwrap
 
 

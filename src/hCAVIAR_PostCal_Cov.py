@@ -12,8 +12,8 @@ import jax.numpy as jnp
 from jax import jit, vmap, lax
 
 
-from src.mod_LDmatrix_class import LDmatrix
-from src.mod_GWAS_summary import GWAS_summary
+from src.INPUT_LDmatrix import INPUT_LDmatrix
+from src.INPUT_GWAS_summary import INPUT_GWAS_summary
 
 
 ########## [] Causal configuration generation 
@@ -171,7 +171,7 @@ def calc_LL_given_batch_numpy_optimized(_l_batch_configures, _GWASsummary, _LDma
 
 
 ## 완전 raw하게 짰던거 (derepcated)
-def calc_LL_given_batch_numpy(_l_batch_configures, _GWASsummary:GWAS_summary, _LDmatrix:LDmatrix, _Lprior, _LL_0):
+def calc_LL_given_batch_numpy(_l_batch_configures, _GWASsummary:INPUT_GWAS_summary, _LDmatrix:INPUT_LDmatrix, _Lprior, _LL_0):
 
     iter_LL_1_items = map(lambda x: _LDmatrix.calc_new_cov(x), _l_batch_configures)
 
@@ -301,8 +301,8 @@ def calc_LL_given_batch_jax(_GWASsummary_jax:jnp.array, _LDmatrix_jax:jnp.array,
     
 ########## [] Main wrapper of this '*.py' file.
 
-def __MAIN__(_N_causal, _GWASsummary:GWAS_summary, _LDmatrix:LDmatrix, _LL_0,
-                           _batch_size=100, _gamma=0.01, _ncp=5.2, _engine="numpy"):
+def __MAIN__(_N_causal, _GWASsummary:INPUT_GWAS_summary, _LDmatrix:INPUT_LDmatrix, _LL_0,
+             _batch_size=100, _gamma=0.01, _ncp=5.2, _engine="numpy"):
 
     """
     - (1) iter on batches of configures.
@@ -486,6 +486,7 @@ def postprepr_LL(_df_result, _rho=0.95,
     f_HLAtype = f_HLA | f_AA | f_intraSNP
     f_SNP = ~f_HLAtype
     f_whole = f_SNP | f_HLAtype
+    f_AA_HLA = f_AA | f_HLA
     
     d_flag_target_group = {
         "whole": f_whole,
@@ -494,9 +495,10 @@ def postprepr_LL(_df_result, _rho=0.95,
         "HLA": f_HLA,
         "AA": f_AA,
         "intraSNP": f_intraSNP,
+        "AA+HLA": f_AA_HLA,
     }
 
-    if 0 < len(_l_type) and len(_l_type) < 6:
+    if 0 < len(_l_type) and len(_l_type) < 6: # 이거 이제 없애야 겠다 (2025.05.13.)
         ## simulation같은거 할 때는 그냥 'whole'만 return했으면 좋겠음.
         d_flag_target_group = {k: v for k, v in d_flag_target_group.items() if k in _l_type}
     

@@ -6,14 +6,14 @@ import math
 
 from datetime import datetime
 
-from src.mod_LDmatrix_class import LDmatrix
-from src.mod_Util import get_N_of_ss
+from src.INPUT_LDmatrix import INPUT_LDmatrix
+from src.Util import get_N_of_ss
 
 
 
-class GWAS_summary():
+class INPUT_GWAS_summary():
 
-    def __init__(self, _fpath, _LDmatrix:LDmatrix):
+    def __init__(self, _fpath, _LDmatrix:INPUT_LDmatrix):
 
         ########## Main variables
         self.sr_GWAS_summary = None

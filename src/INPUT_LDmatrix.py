@@ -7,7 +7,7 @@ from datetime import datetime
 
 
 
-class LDmatrix():
+class INPUT_LDmatrix():
     
     def __init__(self, _fpath):
         

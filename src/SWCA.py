@@ -11,8 +11,8 @@ from datetime import datetime
 import subprocess
 import json
 
-import src.mod_SummaryImp as mod_SummaryImp
-import src.fine_mapping_SWCA as fine_mapping_SWCA
+import src.SWCA_SummaryImp as mod_SummaryImp
+import src.SWCA_fine_mapping as fine_mapping_SWCA
 
 
 ########## (1) Summary imputation
@@ -372,7 +372,7 @@ def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_
              _gcta="/home/wschoi/bin/gcta64", _plink="/home/wschoi/miniconda3/bin/plink"):
     
     """
-    - Main wrapper for 'mod_SWCA.py'
+    - Main wrapper for 'SWCA.py'
     """
 
     ##### (0) load data

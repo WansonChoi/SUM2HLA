@@ -7,11 +7,11 @@ import json
 from datetime import datetime
 from shutil import which
 
-import src.mod_hCAVIAR_prepr as mod_hCAVIAR_prepr
-from src.mod_LDmatrix_class import LDmatrix
-from src.mod_GWAS_summary import GWAS_summary
-import src.mod_PostCal_Cov as mod_PostCal_Cov
-import src.mod_SWCA as mod_SWCA
+import src.INPUT_prepr as INPUT_prepr
+from src.INPUT_LDmatrix import INPUT_LDmatrix
+from src.INPUT_GWAS_summary import INPUT_GWAS_summary
+import src.hCAVIAR_PostCal_Cov as mod_PostCal_Cov
+import src.SWCA as SWCA
 
 
 
@@ -49,8 +49,8 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
 
         ##### Curated input (LD and GWAS summary)
-        self.LDmatrix:LDmatrix = None
-        self.GWAS_summary:GWAS_summary = None
+        self.LDmatrix:INPUT_LDmatrix = None
+        self.GWAS_summary:INPUT_GWAS_summary = None
 
         self.LL_0 = None # LL-baseline
 
@@ -88,6 +88,8 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
         ##### Clumping
         self.f_do_clump = _f_do_clump
 
+        ##### Types of markers to calculate PP.
+        self.l_type = ('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP', 'AA+HLA')
 
 
 
@@ -98,7 +100,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
         ## 얘는 나중에 조건부로 안돌리게 만들어야 할 수도 있을 것 같아서 따로 떼어내놓게.
 
         self.out_matched, self.out_ToClump, self.out_clumped, self.out_json = \
-            mod_hCAVIAR_prepr.__MAIN__(
+            INPUT_prepr.__MAIN__(
                 _fpath_ss=self.sumstats1,
                 _d_fpath_LD=self.d_fpath_LD, _fpath_LD_SNP_bim=None, _fpath_LD_SNP_HLA=self.fpath_LD_SNP_HLA,
                 _out_prefix_ss=self.out_prefix, _out_prefix_LD=self.out_prefix_LD,
@@ -126,7 +128,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
             d_curated_input = json.load(f_json)
 
 
-        self.l_secondary_signals, self.ma = mod_SWCA.__MAIN__(
+        self.l_secondary_signals, self.ma = SWCA.__MAIN__(
             _fpath_ss=d_curated_input['whole']['sumstats'],
             _fpath_ref_ld=d_curated_input['whole']['ld'],
             _fpath_ref_bfile=self.fpath_LD_SNP_HLA,
@@ -171,8 +173,8 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
         with open(self.out_json, 'r') as f_json:
             d_curated_input = json.load(f_json)
 
-        self.LDmatrix = LDmatrix(d_curated_input['whole']['ld'])
-        self.GWAS_summary = GWAS_summary(d_curated_input['whole']['sumstats'], self.LDmatrix)
+        self.LDmatrix = INPUT_LDmatrix(d_curated_input['whole']['ld'])
+        self.GWAS_summary = INPUT_GWAS_summary(d_curated_input['whole']['sumstats'], self.LDmatrix)
 
 
 
@@ -180,6 +182,8 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
         self.LL_0 = \
             self.LDmatrix.term2 \
             -0.5*( self.GWAS_summary.sr_GWAS_summary.values.T @ (np.linalg.solve(self.LDmatrix.df_LD_SNP.values, self.GWAS_summary.sr_GWAS_summary.values)) )
+                # (2025.05.14.) 얘 잠정적으로 `mod_PostCal_Cov.__MAIN__()` 함수 안으로 집어넣었으면 좋겠음.
+                # 'fine-mapping_SWCA.py'에서는 문제없이 집어넣었음.
 
 
         
@@ -214,7 +218,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
             # df_PP.to_csv(self.out_prefix + ".before_postprepr.txt", sep='\t', header=True, index=False, na_rep="NA")
     
             self.OUT_PIP_PP[_N_causal] = \
-                mod_PostCal_Cov.postprepr_LL(df_PP, _l_type=['whole']) # 여기서 return되는건 DataFrame의 dictionary임.
+                mod_PostCal_Cov.postprepr_LL(df_PP, _l_type=self.l_type) # 여기서 return되는건 DataFrame의 dictionary임.
 
             for _type, _df_PP in self.OUT_PIP_PP[_N_causal].items():
 
@@ -261,10 +265,14 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
             "- plink: {}".format(self.plink)
         str_gcta64 = \
             "- gcta64: {}".format(self.gcta64)
-        
+
+
+        ### Types of markers to calculate PP
+        str_l_type = \
+            f"- Types of markers to calculate PP: {self.l_type}"
         
         l_RETURN = [str_raw_ss, str_ref_LD, str_ref_GT, str_curated_input, str_PP,
-                   str_plink, str_gcta64]
+                   str_plink, str_gcta64, str_l_type]
 
         return '\n'.join(l_RETURN)
 
