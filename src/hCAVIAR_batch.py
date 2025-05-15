@@ -10,7 +10,7 @@ from shutil import which
 import src.INPUT_prepr as INPUT_prepr
 from src.INPUT_LDmatrix import INPUT_LDmatrix
 from src.INPUT_GWAS_summary import INPUT_GWAS_summary
-import src.hCAVIAR_PostCal_Cov as mod_PostCal_Cov
+import src.hCAVIAR_PostCalc_Cov as mod_PostCal_Cov
 import src.SWCA as SWCA
 
 
