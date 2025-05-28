@@ -36,8 +36,8 @@ def calc_Z_CMVN(_df_ma, _df_LD, _l_ToCondition):
     df_LD_ToCond = _df_LD.loc[df_ToCond['SNP'], df_ToCond['SNP']]
 
     # display(df_ToIter)
-    # display(df_ToCond)
-    # display(df_LD_ToCond)
+    # print(df_ToCond)
+    # print(df_LD_ToCond)
 
 
 
@@ -93,7 +93,8 @@ def calc_Z_CMVN(_df_ma, _df_LD, _l_ToCondition):
 def iterate_calc_Z_CMVN():
 
     """
-    가장 naive하게 pC만 이용해서 iterate하는 함수를 여기서 짤거임.
+    - 가장 naive하게 pC만 이용해서 iterate하는 함수를 여기서 짤거임.
+    -
 
 
     """

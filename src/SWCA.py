@@ -1,224 +1,106 @@
 import os, re
+from os.path import basename, dirname, join
 import scipy as sp
 import pandas as pd
 
 import src.SWCA_SummaryImp as mod_SummaryImp
 from src.SWCA_COJO_GCTA import iterate_GCTA_COJO
+from src.SWCA_FineMapping import iterate_BayesianFineMapping
 
 
 
-def make_COJO_input(_df_ss, _df_MAF, _N, _df_ss_SNP=None, _maf=0.01):
-    
-    ##### Required columns: [SNP A1 A2 freq b se p N]
-    l_header_final = ["SNP", "A1", "A2", "freq", "b", "se", "p", "N"]
+def transform_imputed_Z_to_ma(_df_imputed_Z, _df_ref_MAF, _N):
+    ### Required columns of the ma : "SNP	A1	A2	freq	b	se	p	N"
 
-    
-    
-    ##### (1) MAF
-    ## 그니께, ['A1', 'A2'] 때문에라도 어차피 df_MAF에 join해야함.
-    df_MAF_2 = _df_MAF.drop(['CHR', 'NCHROBS'], axis=1, errors='ignore').rename({"MAF": "freq"}, axis=1)
-    # display(df_MAF_2)
-    
-    
-    
-    ##### (2) Imputed (HLA loci)
+    ##### (1) The imputed result
+    df_imputed_Z_2 = _df_imputed_Z \
+                         .loc[:, ['SNP', 'Conditional_mean']] \
+        .rename({"Conditional_mean": "Z"}, axis=1)
 
-    df_imputed = _df_ss \
-                    .rename_axis("SNP", axis=0) \
-                    .reset_index(drop=False) \
-                    .rename({"Conditional_mean": "Z_imputed"}, axis=1)
-    
-    df_imputed = df_imputed.merge(df_MAF_2, on='SNP')
+    # display(df_imputed_Z_2)
 
-    sr_P_imputed = df_imputed['Z_imputed'] \
-                    .abs() \
-                    .map(lambda x: 2 * sp.stats.norm.cdf(-x)) \
-                    .rename("p")
-    
-    sr_SE_imputed = pd.Series([1.0]*df_imputed.shape[0], index = df_imputed.index, name='se')
-    sr_N = pd.Series([_N]*df_imputed.shape[0], name='N')
-    
-    df_imputed = pd.concat(
+    ##### (2) MAF
+    df_imputed_Z_3 = df_imputed_Z_2.merge(_df_ref_MAF.drop(['CHR'], axis=1), on=['SNP'])
+    # display(df_imputed_Z_3)
+
+    ##### (3) SE, P, and N
+    sr_SE = pd.Series([1.0] * df_imputed_Z_2.shape[0], name='SE', index=df_imputed_Z_3.index)
+    sr_N = pd.Series([_N] * df_imputed_Z_2.shape[0], name='N', index=df_imputed_Z_3.index)
+    sr_P = df_imputed_Z_3['Z'].abs().map(lambda x: 2 * sp.stats.norm.cdf(-x)).rename("P")
+
+    df_RETURN = pd.concat(
         [
-            df_imputed,
-            sr_P_imputed,
-            sr_SE_imputed,
-            sr_N
+            df_imputed_Z_3,
+            sr_SE, sr_N, sr_P
         ],
         axis=1
     ) \
-        .rename({"Z_imputed": "b"}, axis=1)
+                    .rename({"Z": 'b', 'MAF': 'freq', 'SE': 'se', 'P': 'p'}, axis=1) \
+                    .loc[:, ['SNP', 'A1', 'A2', 'freq', 'b', 'se', 'p', 'N']]
 
-    # print(df_imputed.shape)
-
-    
-    if isinstance(_maf, float) and (0.0 <_maf < 1.0):
-        f_MAF = (df_imputed['freq'] < _maf) | (df_imputed['freq'] > (1 - _maf))
-        df_imputed = df_imputed[~f_MAF]
-        
-        """
-        일단, Imputed HLA loci에만 MAF thresholding 하는걸로.
-        """
-    
-    # print(df_imputed.shape)
-    
-    df_RETURN = df_imputed
-    
-    
-    
-    ##### (3) Unimputed (the clumped SNPs)
-    
-    ## SNPs들의 summary가 주어지면 얘도 concat
-    if isinstance(_df_ss_SNP, pd.DataFrame):
-        
-        l_ToExtract = ['SNP_LD', 'A1_LD', 'A2_LD', 'BETA', 'SE', 'P']
-        d_ToRename = {"SNP_LD": "SNP", 
-                      'A1_LD': "A1", 'A2_LD': "A2", 
-                      "BETA": 'b', 'SE': 'se', "P": 'p', "MAF": "freq"}
-
-        df_unimputed = pd.concat([
-            _df_ss_SNP[l_ToExtract], 
-            pd.Series([_N]*_df_ss_SNP.shape[0], index=_df_ss_SNP.index, name='N')
-        ], axis=1) \
-            .rename(d_ToRename, axis=1)
-
-        ## `_df_ss`와 MAF간 shared SNPs들만 남김.
-        df_unimputed = df_unimputed.merge(
-            df_MAF_2, on=['SNP', 'A1', 'A2']
-        )
-        
-        # display(df_unimputed)
-        df_RETURN = pd.concat([df_unimputed, df_imputed])
-
-    
-    
-    ##### (4) Wrap-up
-    df_RETURN = df_MAF_2[['SNP', 'A1', 'A2']] \
-                    .merge(df_RETURN, on=['SNP', 'A1', 'A2']) \
-                    .loc[:, l_header_final]
-    ## 사실상 row랑 column의 sorting
-    
     return df_RETURN
 
 
 
-def get_single_residue_markers(_l_top_signal_markers, _df_MAF, _df_cma_ROUND_N):
+def transform_observed_SNPs_to_ma(_df_observed_Z, _df_ref_MAF, _N):
+    ### Required columns of the ma : "SNP	A1	A2	freq	b	se	p	N"
+    # display(_df_obs)
 
-    ##### make sure the `_df_ma_ROUND_N` is sorted by 'p'
-    # if _top_signal_markers == None:
-    #     _df_cma_ROUND_N = _df_cma_ROUND_N.sort_values("p")
-    #     print(_df_cma_ROUND_N)
-    #
-    #     _top_signal_markers = _df_cma_ROUND_N['SNP'].iat[0]
+    ##### (1) MAF
 
-    # display(_top_signal_markers)
+    if "MAF" in _df_observed_Z:
+        df_obs_2 = _df_observed_Z.loc[:, ['SNP_LD', 'A1_LD', 'A2_LD', 'Z_fixed', 'MAF']]
+    else:
+        df_obs_2 = _df_observed_Z.merge(
+            _df_ref_MAF.drop(['CHR', 'NCHROBS'], axis=1, errors='ignore'),
+            left_on=['SNP_LD', 'A1_LD', 'A2_LD'], right_on=['SNP', 'A1', 'A2']
+        )
 
-    df_cma_ROUND_N = pd.read_csv(_df_cma_ROUND_N, sep='\t', header=0) if isinstance(_df_cma_ROUND_N, str) else _df_cma_ROUND_N
-    df_cma_ROUND_N.sort_values("p", inplace=True)
+        ## `_df_ref_MAF`에 있는 불필요한 columns들 제거.
+        df_obs_2 = df_obs_2.drop(['SNP', 'A1', 'A2'], axis=1, errors='ignore')
+        # display(df_obs_2)
 
-    df_MAF = pd.read_csv(_df_MAF, sep=r'\s+', header=0) if isinstance(_df_MAF, str) else _df_MAF
+    ##### (2) N
+    if "N" not in _df_observed_Z:
+        df_obs_2 = pd.concat(
+            [
+                df_obs_2,
+                pd.Series([_N] * df_obs_2.shape[0], index=df_obs_2.index, name='N')
+            ],
+            axis=1
+        )
 
+    ##### (3) SE
+    sr_SE = pd.Series([1.0] * _df_observed_Z.shape[0], name='se', index=df_obs_2.index)
 
+    ##### (4) P
+    sr_P = df_obs_2['Z_fixed'].abs().map(lambda x: 2 * sp.stats.norm.cdf(-x)).rename("p")
 
-    ##### MAF
-    df_MAF_2 = df_MAF[['SNP', 'A1', 'MAF']]
-    sr_MAF_2 = df_MAF['MAF'].map(lambda x: x if x < 0.5 else 1 - x).rename("MAF_2")
-    df_MAF_2 = pd.concat([df_MAF_2, sr_MAF_2], axis=1)
+    ##### RETURN
+    df_obs_3 = pd.concat(
+        [
+            df_obs_2,
+            sr_SE,
+            sr_P
+        ],
+        axis=1
+    ) \
+                   .loc[:, ["SNP_LD", "A1_LD", "A2_LD", "MAF", "Z_fixed", "se", "p", "N"]] \
+        .rename({
+        "SNP_LD": "SNP", "A1_LD": "A1", "A2_LD": "A2", "MAF": "freq", "Z_fixed": "b"
+    }, axis=1)
 
-
-
-    ##### pattern for AA and intragenic SNPs
-    p_AA = re.compile(r'^(AA_\S+_-?\d+_)\d+_(\S+)$')
-    # p_HLA = re.compile(r'HLA_DRB1_04')
-    p_SNPS = re.compile(r'^(SNP_\S+_\d+)_(\S+)$')
-    # p_INS = re.compile()
-
-
-
-    l_OUT_single_factor_markers = [] # reference factor is excluded
-    l_OUT_df_ToCondition = [] # for check
-
-    for _top_signal_markers in _l_top_signal_markers:
-
-        ### factor가 2개 이상인 AA or intragenic SNP marker
-        if bool(p_AA.match(_top_signal_markers)):
-
-            m = p_AA.match(_top_signal_markers)
-            prefix_temp = m.group(1)
-
-            f_AA_locus = df_cma_ROUND_N['SNP'].str.startswith(prefix_temp)
-            _df_cma_ROUND_N_2 = df_cma_ROUND_N[f_AA_locus]
-
-            f_is_single_factor = _df_cma_ROUND_N_2['SNP'].map(lambda x: p_AA.match(x).group(2)).map(lambda x: len(x) == 1)
-            _df_cma_ROUND_N_3 = _df_cma_ROUND_N_2[f_is_single_factor]
-
-
-        elif bool(p_SNPS.match(_top_signal_markers)):
-
-            m = p_SNPS.match(_top_signal_markers)
-            prefix_temp = m.group(1)
-            # print(prefix_temp)
-
-            f_SNPS_locus = df_cma_ROUND_N['SNP'].str.startswith(prefix_temp)
-            _df_cma_ROUND_N_2 = df_cma_ROUND_N[f_SNPS_locus]
-
-            f_is_single_factor = _df_cma_ROUND_N_2['SNP'].map(lambda x: p_SNPS.match(x).group(2)).map(lambda x: len(x) == 1)
-            _df_cma_ROUND_N_3 = _df_cma_ROUND_N_2[f_is_single_factor]
-
-
-        else:
-
-            ## (ex) "HLA_DRB1_0401"
-            l_OUT_single_factor_markers.extend([_top_signal_markers])
-            # No job for `l_OUT_df_ToCondition`
-            continue
-
-        """
-        - 해당 locus의 single factor markers들만 남긴다.
-        - 얘네들의 MAF정보로 제일 prevalent한 놈만 제외한다. => colinearity를 반영하기 위해.
-        """
-
-        # df_ToCondition = _df_cma_ROUND_N_3[['SNP', 'p', 'A1']]
-        df_ToCondition = _df_cma_ROUND_N_3.rename({"refA": "A1"}, axis=1).loc[:, ['SNP', 'p', 'A1']]
-            # 최초 '*.ma'파일은 A1인데 (ROUND_0), cojo파일상에서는 'refA'임 (ROUND_1 ~)
-
-        df_ToCondition = df_ToCondition.merge(df_MAF_2, on=['SNP', 'A1'])
-        df_ToCondition = df_ToCondition.sort_values("MAF_2", ascending=True)
-        # display(df_ToCondition)
-
-        if df_ToCondition.shape[0] > 1:
-            l_OUT_single_factor_markers.extend(df_ToCondition['SNP'].iloc[:-1].tolist()) # co-linearity 방지.
-        else:
-            l_OUT_single_factor_markers.append(df_ToCondition['SNP'].iloc[0])
-            """
-            이런 예외가 있었음.
-            
-                                  SNP             p A1     MAF   MAF_2
-            0  AA_DRB1_112_32657542_H  2.185140e-30  P  0.9883  0.0117
-            
-            - single residue marker가 1개인 경우, `.iloc[:-1]`이렇게 하면 아무것도 추가가 안됨.  
-            - 걍 얘만 extend 해줘야 함.
-            
-            """
-
-        l_OUT_df_ToCondition.append(df_ToCondition)
-
-
-
-    df_ToRefer = pd.concat(l_OUT_df_ToCondition) if len(l_OUT_df_ToCondition) > 0 else None
-
-    return l_OUT_single_factor_markers, df_ToRefer
+    return df_obs_3
 
 
 
 def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_PP, _out_prefix, _N,
-             _f_include_SNPs=False, _f_use_finemapping=True, _f_single_factor_markers=True,
-             _maf=0.01,
+             _module="Bayesian",
+             _f_include_SNPs=False, _f_use_finemapping=True, _f_single_factor_markers=False,
+             _r2_pred=0.85,
+             _maf_imputed=0.05, _N_max_iter=5,
              _gcta="/home/wschoi/bin/gcta64", _plink="/home/wschoi/miniconda3/bin/plink"):
-    
-    """
-    - Main wrapper for 'SWCA.py'
-    """
+
 
     ##### (0) load data
 
@@ -227,74 +109,106 @@ def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_
     df_LDmatrix.index = df_LDmatrix.columns
         # next top 찾을 때 fine-mapping 활용하게 되면 LDmatrix 한 번 load하고 재사용하게 해야 함.
 
-    df_MAF = pd.read_csv(_fpath_ref_MAF, sep='\s+', header=0) \
+    df_ref_MAF = pd.read_csv(_fpath_ref_MAF, sep='\s+', header=0).drop(['NCHROBS'], axis=1) \
                     if isinstance(_fpath_ref_MAF, str) else _fpath_ref_MAF
 
-    df_ss_SNP = pd.read_csv(_fpath_ss, sep='\t', header=0) \
+    df_observed_Z = pd.read_csv(_fpath_ss, sep='\t', header=0) \
                     if isinstance(_fpath_ss, str) else _fpath_ss
 
 
     
     ##### (1) Summary Imputation
 
-    df_Z_imputed, _ = mod_SummaryImp.__MAIN__(df_ss_SNP, df_LDmatrix)
-    
-    """
-    (No axis name)    Conditional_mean
-    SNP_A_30018316	-1.328578
-    AA_A_-22_30018317_I	-1.328578    
-    """
+    df_Z_imputed = mod_SummaryImp.__MAIN__(df_observed_Z, df_LDmatrix, df_ref_MAF)
+    df_Z_imputed_r2pred = df_Z_imputed[ df_Z_imputed['r2_pred'] >= _r2_pred ]
 
+    df_Z_imputed.to_csv(_out_prefix + ".Z_imputed", sep='\t', header=True, index=False, na_rep="NA")
+    # print(df_Z_imputed)
+    # print(df_Z_imputed_r2pred)
 
 
     ##### (2) make the COJO input
 
-    df_ma = make_COJO_input(df_Z_imputed, df_MAF, _N, _maf=_maf,
-                            _df_ss_SNP=(df_ss_SNP if _f_include_SNPs else None))
+    df_ma = transform_imputed_Z_to_ma(df_Z_imputed, df_ref_MAF, _N)
+    df_ma_r2_pred = transform_imputed_Z_to_ma(df_Z_imputed_r2pred, df_ref_MAF, _N)
 
     OUT_ma = _out_prefix + ".ma"
+    OUT_ma_r2_pred = _out_prefix + f".r2pred{_r2_pred}.ma"
+
     df_ma.to_csv(OUT_ma, sep='\t', header=True, index=False, na_rep="NA")
-
-    """
-    - HLA loci들에 한정해서 Z_imputed가 나옴.
-        - 필요하면 `_fpath_ss`의 SNPs들도 함께 넣을 수 있음.
-    - MAF filtering은 `make_COJO_input()`함수 내에서 적용함.
-    """
+    df_ma_r2_pred.to_csv(OUT_ma_r2_pred, sep='\t', header=True, index=False, na_rep="NA")
 
 
-    
-    ##### (3) iterate GCTA COJO "--cojo-cond"
-    
-    ### (3-1) the top PP locus to start
-    df_PP = pd.read_csv(_fpath_PP, sep='\t', header=0) \
-                .sort_values("PP", ascending=False) \
-                .iloc[:5, :]
-    
-    # display(df_PP)
-    
-    initial_top_signal = df_PP['SNP'].iat[0]
-    print("initial_top_signal: {}".format(initial_top_signal))
 
-    
-    ### (3-2) new out_prefix for COJO
-    basename_temp = os.path.basename(_out_prefix) + ".ROUND_"
-    dirname_temp = os.path.dirname(_out_prefix)
-    
-    out_dir_COJO = os.path.join(dirname_temp, basename_temp)
-    out_prefix_COJO = os.path.join(out_dir_COJO, basename_temp)
-    
+    ##### (3) new out_prefix for COJO
+    basename_temp = basename(_out_prefix) + ".ROUND_"
+    dirname_temp = dirname(_out_prefix)
+
+    out_dir_COJO = join(dirname_temp, basename_temp)
+    out_prefix_COJO = join(out_dir_COJO, basename_temp)
+
     os.makedirs(out_dir_COJO, exist_ok=True)
-    
-    l_secondary_signals = iterate_GCTA_COJO(
-        OUT_ma, initial_top_signal,
-        _fpath_ref_bfile, _fpath_ref_ld, _fpath_ref_MAF,
-        out_prefix_COJO,
-        _f_use_finemapping=_f_use_finemapping, _f_single_factor_markers=_f_single_factor_markers,
-        _gcta=_gcta, _plink=_plink
-    )
 
-    
-    return l_secondary_signals, OUT_ma
+
+
+    ##### (4) Main - SWCA based on module types.
+
+    ## (2025.05.22.) 사실상 _module == "Bayesian" 때만 돌아감.
+
+    if _module == "Bayesian":
+
+        df_PP = pd.read_csv(_fpath_PP, sep='\t', header=0) \
+                    .sort_values("PP", ascending=False)
+        df_PP = df_PP[ df_PP['CredibleSet'] ]
+        print(f"Initial_top_signal: {df_PP['SNP'].tolist()}")
+
+        ## input ma파일로 이제 r2_pred로 thresholding한게 들어감.
+        l_conditions, d_conditions = iterate_BayesianFineMapping(
+            df_ma_r2_pred, df_PP['SNP'].tolist(),
+            _fpath_ref_bfile, _fpath_ref_ld, _fpath_ref_MAF,
+            out_prefix_COJO,
+            _N_max_iter=_N_max_iter, _f_polymoprhic_marker=_f_single_factor_markers,
+            _plink=_plink
+        )
+
+        return l_conditions, d_conditions, OUT_ma_r2_pred
+
+    elif _module == "pC":
+        pass
+    elif _module == "GCTA-COJO": # (deprecated; 2025.05.22.)
+
+        ##### (3) iterate GCTA COJO "--cojo-cond"
+
+        df_ma = make_COJO_input(df_Z_imputed, df_ref_MAF, _N, _maf_imputed=_maf_imputed,
+                                _df_ss_SNP=(df_observed_Z if _f_include_SNPs else None))
+
+        OUT_ma = _out_prefix + ".maf{}.ma".format(str(_maf_imputed).replace(".", "_"))
+        df_ma.to_csv(OUT_ma, sep='\t', header=True, index=False, na_rep="NA")
+
+        df_PP = pd.read_csv(_fpath_PP, sep='\t', header=0) \
+                    .sort_values("PP", ascending=False) \
+                    .iloc[:5, :]
+
+        # display(df_PP)
+
+        initial_top_signal = df_PP['SNP'].iat[0]
+        print("initial_top_signal: {}".format(initial_top_signal))
+
+
+
+        l_secondary_signals = iterate_GCTA_COJO(
+            OUT_ma, initial_top_signal,
+            _fpath_ref_bfile, _fpath_ref_ld, _fpath_ref_MAF,
+            out_prefix_COJO,
+            _f_use_finemapping=_f_use_finemapping, _f_single_factor_markers=_f_single_factor_markers,
+            _gcta=_gcta, _plink=_plink
+        )
+
+
+        return l_secondary_signals, OUT_ma
+
+    else:
+        raise ValueError("Wrong module type for SWCA!")
 
 
 

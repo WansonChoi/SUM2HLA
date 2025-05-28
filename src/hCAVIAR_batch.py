@@ -18,7 +18,8 @@ import src.SWCA as SWCA
 class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
     def __init__(self, _ss_raw, _ref_prefix, _out_prefix,
-                 _batch_size=30, _f_run_SWCR=True,
+                 _batch_size=30, _f_run_SWCR=True, _N_max_iter=5,
+                 _maf_imputed=0.05, _r2_pred=0.85,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
                  _plink=None, _gcta=None
     ):
@@ -78,9 +79,12 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
         ##### SWCR with GCTA "--cojo-cond"
         # self.N = _N   # `GWAS_summary` class 내에서 가져오도록 바꿈.
         self.ma = None
-        self.l_secondary_signals = []
-        self.fpath_secondary_signals = None
+        self.l_conditional_signals = [] # 여차하면 없애도 됨.
+        self.d_conditional_signals = {}
         self.f_run_SWCR = _f_run_SWCR
+        self.N_max_iter = _N_max_iter
+        self.maf_imputed = _maf_imputed
+        self.r2_pred = _r2_pred
 
         # self.out_cojo_slct = None
 
@@ -128,7 +132,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
             d_curated_input = json.load(f_json)
 
 
-        self.l_secondary_signals, self.ma = SWCA.__MAIN__(
+        self.l_conditional_signals, self.d_conditional_signals, self.ma = SWCA.__MAIN__(
             _fpath_ss=d_curated_input['whole']['sumstats'],
             _fpath_ref_ld=d_curated_input['whole']['ld'],
             _fpath_ref_bfile=self.fpath_LD_SNP_HLA,
@@ -136,27 +140,23 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
             _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'],
             _out_prefix=self.out_prefix,
             _N=self.GWAS_summary.N,
-            _gcta=self.gcta64
+            _N_max_iter=self.N_max_iter,
+            _maf_imputed=self.maf_imputed,
+            _r2_pred=self.r2_pred,
+            _gcta=self.gcta64,
+            _plink=self.plink
         )
 
-        pd.Series(self.l_secondary_signals, name='secondary_signal') \
+        ### export 1 - signal list
+        pd.Series(self.l_conditional_signals, name='secondary_signal') \
             .to_csv(self.ma + ".SWCA.snplist", header=False, index=False, na_rep='NA')
+
+        ### export 2 - signal dictionary
+        with open(self.ma + ".SWCA.dict", 'w') as f_SWCA_dict:
+            json.dump(self.d_conditional_signals, f_SWCA_dict, indent=4)
         
-        self.fpath_secondary_signals = self.ma + ".SWCA.snplist"
 
-        return self.l_secondary_signals, self.ma, self.fpath_secondary_signals
-
-        # self.out_cojo_slct = mod_SWCA.__MAIN__(
-        #     _fpath_ss=d_curated_input['whole']['sumstats'],
-        #     _fpath_ld_matrix=d_curated_input['whole']['ld'],
-        #     _fpath_ld_bfile=self.fpath_LD_SNP_HLA,
-        #     _fpath_ld_MAF=self.fpath_LD_MAF,
-        #     _out_prefix=self.out_prefix,
-        #     _N=self.N,
-        #     _gcta=self.gcta64
-        # )
-
-        # return self.out_cojo_slct
+        return self.l_conditional_signals, self.d_conditional_signals, self.ma
 
     
     
@@ -237,7 +237,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
         
         
         
-        return self.OUT_PIP, self.OUT_LL_N_causal, self.fpath_secondary_signals
+        return self.OUT_PIP, self.OUT_LL_N_causal
 
 
     

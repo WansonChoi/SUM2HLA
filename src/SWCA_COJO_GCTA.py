@@ -6,7 +6,109 @@ from os.path import dirname
 import pandas as pd
 
 from src import SWCA_PostCalc as fine_mapping_SWCA
-from src.SWCA import get_single_residue_markers
+
+
+
+def get_single_residue_markers(_l_top_signal_markers, _df_MAF, _df_cma_ROUND_N):
+    ##### make sure the `_df_ma_ROUND_N` is sorted by 'p'
+    # if _top_signal_markers == None:
+    #     _df_cma_ROUND_N = _df_cma_ROUND_N.sort_values("p")
+    #     print(_df_cma_ROUND_N)
+    #
+    #     _top_signal_markers = _df_cma_ROUND_N['SNP'].iat[0]
+
+    # display(_top_signal_markers)
+
+    df_cma_ROUND_N = pd.read_csv(_df_cma_ROUND_N, sep='\t', header=0) if isinstance(_df_cma_ROUND_N,
+                                                                                    str) else _df_cma_ROUND_N
+    df_cma_ROUND_N.sort_values("p", inplace=True)
+
+    df_MAF = pd.read_csv(_df_MAF, sep=r'\s+', header=0) if isinstance(_df_MAF, str) else _df_MAF
+
+    ##### MAF
+    df_MAF_2 = df_MAF[['SNP', 'A1', 'MAF']]
+    sr_MAF_2 = df_MAF['MAF'].map(lambda x: x if x < 0.5 else 1 - x).rename("MAF_2")
+    df_MAF_2 = pd.concat([df_MAF_2, sr_MAF_2], axis=1)
+
+    ##### pattern for AA and intragenic SNPs
+    p_AA = re.compile(r'^(AA_\S+_-?\d+_)\d+_(\S+)$')
+    # p_HLA = re.compile(r'HLA_DRB1_04')
+    p_SNPS = re.compile(r'^(SNP_\S+_\d+)_(\S+)$')
+    # p_INS = re.compile()
+
+    l_OUT_single_factor_markers = []  # reference factor is excluded
+    l_OUT_df_ToCondition = []  # for check
+
+    for _top_signal_markers in _l_top_signal_markers:
+
+        ### factor가 2개 이상인 AA or intragenic SNP marker
+        if bool(p_AA.match(_top_signal_markers)):
+
+            m = p_AA.match(_top_signal_markers)
+            prefix_temp = m.group(1)
+
+            f_AA_locus = df_cma_ROUND_N['SNP'].str.startswith(prefix_temp)
+            _df_cma_ROUND_N_2 = df_cma_ROUND_N[f_AA_locus]
+
+            f_is_single_factor = _df_cma_ROUND_N_2['SNP'].map(lambda x: p_AA.match(x).group(2)).map(
+                lambda x: len(x) == 1)
+            _df_cma_ROUND_N_3 = _df_cma_ROUND_N_2[f_is_single_factor]
+
+
+        elif bool(p_SNPS.match(_top_signal_markers)):
+
+            m = p_SNPS.match(_top_signal_markers)
+            prefix_temp = m.group(1)
+            # print(prefix_temp)
+
+            f_SNPS_locus = df_cma_ROUND_N['SNP'].str.startswith(prefix_temp)
+            _df_cma_ROUND_N_2 = df_cma_ROUND_N[f_SNPS_locus]
+
+            f_is_single_factor = _df_cma_ROUND_N_2['SNP'].map(lambda x: p_SNPS.match(x).group(2)).map(
+                lambda x: len(x) == 1)
+            _df_cma_ROUND_N_3 = _df_cma_ROUND_N_2[f_is_single_factor]
+
+
+        else:
+
+            ## (ex) "HLA_DRB1_0401"
+            l_OUT_single_factor_markers.extend([_top_signal_markers])
+            # No job for `l_OUT_df_ToCondition`
+            continue
+
+        """
+        - 해당 locus의 single factor markers들만 남긴다.
+        - 얘네들의 MAF정보로 제일 prevalent한 놈만 제외한다. => colinearity를 반영하기 위해.
+        """
+
+        # df_ToCondition = _df_cma_ROUND_N_3[['SNP', 'p', 'A1']]
+        df_ToCondition = _df_cma_ROUND_N_3.rename({"refA": "A1"}, axis=1).loc[:, ['SNP', 'p', 'A1']]
+        # 최초 '*.ma'파일은 A1인데 (ROUND_0), cojo파일상에서는 'refA'임 (ROUND_1 ~)
+
+        df_ToCondition = df_ToCondition.merge(df_MAF_2, on=['SNP', 'A1'])
+        df_ToCondition = df_ToCondition.sort_values("MAF_2", ascending=True)
+        # display(df_ToCondition)
+
+        if df_ToCondition.shape[0] > 1:
+            l_OUT_single_factor_markers.extend(df_ToCondition['SNP'].iloc[:-1].tolist())  # co-linearity 방지.
+        else:
+            l_OUT_single_factor_markers.append(df_ToCondition['SNP'].iloc[0])
+            """
+            이런 예외가 있었음.
+
+                                  SNP             p A1     MAF   MAF_2
+            0  AA_DRB1_112_32657542_H  2.185140e-30  P  0.9883  0.0117
+
+            - single residue marker가 1개인 경우, `.iloc[:-1]`이렇게 하면 아무것도 추가가 안됨.  
+            - 걍 얘만 extend 해줘야 함.
+
+            """
+
+        l_OUT_df_ToCondition.append(df_ToCondition)
+
+    df_ToRefer = pd.concat(l_OUT_df_ToCondition) if len(l_OUT_df_ToCondition) > 0 else None
+
+    return l_OUT_single_factor_markers, df_ToRefer
 
 
 
