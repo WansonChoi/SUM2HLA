@@ -157,7 +157,7 @@ def __MAIN__postCalc_SWCA(_fpath_COJOsummary, _fpath_LDmatrix,
 
 
 def __MAIN__(_fpath_cma, _fpath_ref, _fpath_ref_LD, _out_dir,
-             _plink):
+             _plink, _ncp=5.2):
 
     ##### (0) load data
     os.makedirs(_out_dir, exist_ok=True)
@@ -214,7 +214,7 @@ def __MAIN__(_fpath_cma, _fpath_ref, _fpath_ref_LD, _out_dir,
 
     ##### (5) Posterior probability
 
-    df_PP_cma = __MAIN__postCalc_SWCA(df_cma_sumstats3, df_LDmatrix_2)
+    df_PP_cma = __MAIN__postCalc_SWCA(df_cma_sumstats3, df_LDmatrix_2, _ncp=_ncp)
 
     OUT_PP_cma = join(_out_dir, basename(_fpath_cma) + ".PP")
     df_PP_cma.to_csv(OUT_PP_cma, sep='\t', header=True, index=False, na_rep="NA")

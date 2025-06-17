@@ -19,7 +19,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
     def __init__(self, _ss_raw, _ref_prefix, _out_prefix,
                  _batch_size=30, _f_run_SWCR=True, _N_max_iter=5,
-                 _maf_imputed=0.05, _r2_pred=0.85,
+                 _maf_imputed=0.05, _r2_pred=0.85, _ncp=5.2,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
                  _plink=None, _gcta=None
     ):
@@ -57,7 +57,8 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
         
         ##### Model Parameters
-        self.ncp = 5.2
+        self.ncp = _ncp
+        # print(f"NCP: {self.ncp}")
         self.gamma = 0.01
         self.N_causal = 1 # 웬만하면 건드리지 마라.
         self.batch_size = _batch_size
@@ -143,6 +144,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
             _N_max_iter=self.N_max_iter,
             _maf_imputed=self.maf_imputed,
             _r2_pred=self.r2_pred,
+            _ncp=self.ncp,
             _gcta=self.gcta64,
             _plink=self.plink
         )

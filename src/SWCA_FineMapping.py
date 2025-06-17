@@ -64,6 +64,7 @@ display(get_polymorphic_locus_markers(df_T1D_answer_HLA_SNP_M2447, "SNP_DQB1_327
 def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
                                 _fpath_ref, _df_ref_LD, _df_ref_FRQ,
                                 _out_prefix,
+                                _ncp=5.2,
                                 _N_max_iter=100, _f_polymoprhic_marker=False,
                                 _plink="/home/wschoi/miniconda3/bin/plink"):
     
@@ -117,13 +118,22 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
         OUT_CMVN = _out_prefix + f".ROUND_{i}.cma.cojo"
         df_CMVN_temp_2.sort_values("pC").to_csv(OUT_CMVN, sep='\t', header=True, index=False, na_rep="NA")
 
+
+        ##### End condition (2025.06.04.) 엎으면 PP계산할 이유가 없음.
+        if df_CMVN_temp['cP'].sort_values().iat[0] > 5e-8:
+            print("No more signals!")
+            break
+
+
+
         ##### (2) Bayesian fine-mapping으로 next top 찾기
         df_PP_cma, OUT_PP_cma = SWCA_PostCalc.__MAIN__(
             OUT_CMVN,
             _fpath_ref,
             df_ref_LD,
             dirname(_out_prefix),
-            _plink
+            _plink,
+            _ncp=_ncp
         )
 
         df_PP_cma_Credible = df_PP_cma[df_PP_cma['CredibleSet']]
@@ -148,10 +158,10 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
         l_condition.extend(l_condition_next)
         d_OUT_conditions[i] = l_condition_next
 
-        ##### End condition
-        if df_CMVN_temp['cP'].sort_values().iat[0] > 5e-8:
-            print("No more signals!")
-            break
+        # ##### End condition
+        # if df_CMVN_temp['cP'].sort_values().iat[0] > 5e-8:
+        #     print("No more signals!")
+        #     break
 
     return l_condition, {f"ROUND_{k+1}": v for k, v in d_OUT_conditions.items()}
 

@@ -97,7 +97,7 @@ def transform_observed_SNPs_to_ma(_df_observed_Z, _df_ref_MAF, _N):
 def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_PP, _out_prefix, _N,
              _module="Bayesian",
              _f_include_SNPs=False, _f_use_finemapping=True, _f_single_factor_markers=False,
-             _r2_pred=0.85,
+             _r2_pred=0.85, _ncp=5.2,
              _maf_imputed=0.05, _N_max_iter=5,
              _gcta="/home/wschoi/bin/gcta64", _plink="/home/wschoi/miniconda3/bin/plink"):
 
@@ -159,7 +159,10 @@ def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_
 
         df_PP = pd.read_csv(_fpath_PP, sep='\t', header=0) \
                     .sort_values("PP", ascending=False)
+
+        df_PP = df_PP[ df_PP['SNP'].isin(df_ma_r2_pred['SNP']) ] # (2025.05.28.) r2pred로 filter하고 남은 애들만.
         df_PP = df_PP[ df_PP['CredibleSet'] ]
+
         print(f"Initial_top_signal: {df_PP['SNP'].tolist()}")
 
         ## input ma파일로 이제 r2_pred로 thresholding한게 들어감.
@@ -167,6 +170,7 @@ def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_
             df_ma_r2_pred, df_PP['SNP'].tolist(),
             _fpath_ref_bfile, _fpath_ref_ld, _fpath_ref_MAF,
             out_prefix_COJO,
+            _ncp=_ncp,
             _N_max_iter=_N_max_iter, _f_polymoprhic_marker=_f_single_factor_markers,
             _plink=_plink
         )
