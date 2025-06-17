@@ -213,7 +213,8 @@ d_LDtect_HLAregion_hg19 = {
 }
 
 d_LDtect_HLAregion_hg19_2 = {
-    "whole": (29_000_000, 34_000_000),
+    # "whole": (29_000_000, 34_000_000),
+    "whole": (28_000_000, 35_000_000), # 뭐던동 reference data의 BP range를 cover할 수 있도록.
     # "HLAregion2": (29737971, 30798168),
     # "HLAregion3": (30798168, 31571218),
     # "HLAregion4": (31571218, 32682664),
@@ -221,6 +222,16 @@ d_LDtect_HLAregion_hg19_2 = {
 }
 
 def split_summary_byLDtect(_df_matched, _d_LDtect=d_LDtect_HLAregion_hg19_2):
+
+    """
+    - 얘는 더 이상 쓸모가 없음. (LD를 region별로 나누는 것보다도 쓸모가 없음.)
+    - 뭐던동 `d_LDtect_HLAregion_hg19_2`의 'whole'은 reference data의 BP range를 cover할 수 있어야 함.
+    - (1) reference marker set만 생각하면 됨, GWAS summary의 marker set은 결국 reference data와 share하는 만큼만 남으니까.
+    - (2) HAN은 28mb~이고 GWAS summary도 28mb~인데, 여기서 29mb~로 잘라버리면 28~29mb의 SNPs들이 소실됨.
+    - (3) 그 와중에 여기를 제외하면 모두 주어진대로 28mb~로 작업함. => down-stream에서 차원 mismatch발생.
+
+
+    """
     
     d_RETURN = {}
     
