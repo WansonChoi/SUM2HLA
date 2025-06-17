@@ -19,7 +19,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
     def __init__(self, _ss_raw, _ref_prefix, _out_prefix,
                  _batch_size=30, _f_run_SWCR=True, _N_max_iter=5,
-                 _maf_imputed=0.05, _r2_pred=0.85, _ncp=5.2,
+                 _maf_imputed=0.05, _r2_pred=0.6, _ncp=5.2,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
                  _plink=None, _gcta=None
     ):
@@ -84,10 +84,9 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
         self.d_conditional_signals = {}
         self.f_run_SWCR = _f_run_SWCR
         self.N_max_iter = _N_max_iter
-        self.maf_imputed = _maf_imputed
+        self.maf_imputed = _maf_imputed # (Deprecated, practically. 2025.06.18.)
         self.r2_pred = _r2_pred
 
-        # self.out_cojo_slct = None
 
 
         ##### Clumping

@@ -97,7 +97,7 @@ def transform_observed_SNPs_to_ma(_df_observed_Z, _df_ref_MAF, _N):
 def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_PP, _out_prefix, _N,
              _module="Bayesian",
              _f_include_SNPs=False, _f_use_finemapping=True, _f_single_factor_markers=False,
-             _r2_pred=0.85, _ncp=5.2,
+             _r2_pred=0.6, _ncp=5.2,
              _maf_imputed=0.05, _N_max_iter=5,
              _gcta="/home/wschoi/bin/gcta64", _plink="/home/wschoi/miniconda3/bin/plink"):
 
