@@ -65,7 +65,7 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
                                 _fpath_ref, _df_ref_LD, _df_ref_FRQ,
                                 _out_prefix,
                                 _ncp=5.2,
-                                _N_max_iter=100, _f_polymoprhic_marker=False,
+                                _N_max_iter=5, _f_polymoprhic_marker=False,
                                 _plink="/home/wschoi/miniconda3/bin/plink"):
     
     ##### (0) Preliminaries
@@ -97,13 +97,13 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
 
 
     ### output variable
-    d_OUT_conditions = {0: l_condition.copy()}
+    d_OUT_conditions = {1: l_condition.copy()}
 
 
 
     ##### (1) Main iteration
 
-    for i in range(1, _N_max_iter + 1):
+    for i in range(2, _N_max_iter + 1):
 
         print("\n=====[ ROUND {} ]".format(i))
         print(f"Conditions: {l_condition}")
@@ -163,7 +163,7 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
         #     print("No more signals!")
         #     break
 
-    return l_condition, {f"ROUND_{k+1}": v for k, v in d_OUT_conditions.items()}
+    return l_condition, {f"ROUND_{k}": v for k, v in d_OUT_conditions.items()}
 
 
 
