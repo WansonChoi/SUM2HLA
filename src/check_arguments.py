@@ -23,7 +23,7 @@ def check_sumstats(_sumstats) -> bool:
     sr_ss_headers = df_ss_temp.columns.to_series(index=None)
 
     if not pd.Series(l_headers_required).isin(sr_ss_headers).all():
-        raise RuntimeError('Sumstats file does not contain required columns')
+        raise RuntimeError('The given sumstats file does not contain the following required columns: ["CHR", "SNP", "BP", "A1", "N", "SE", "Z", "P", "A2"]')
 
 
     return True
