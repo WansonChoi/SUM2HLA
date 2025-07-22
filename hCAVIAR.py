@@ -76,4 +76,4 @@ if __name__ == "__main__":
 
     t_end = datetime.now()
     print(f"\n\n[ {basename(__file__)} ]: End. ({t_end})")
-    print(f"[ {basename(__file__)} ]: Total time: {t_end - t_end}")
+    print(f"[ {basename(__file__)} ]: Total time: {t_end - t_start}")
