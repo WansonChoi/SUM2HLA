@@ -133,20 +133,11 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
 
         self.l_conditional_signals, self.d_conditional_signals, self.ma = SWCA.__MAIN__(
-            _fpath_ss=d_curated_input['whole']['sumstats'],
-            _fpath_ref_ld=d_curated_input['whole']['ld'],
-            _fpath_ref_bfile=self.fpath_LD_SNP_HLA,
-            _fpath_ref_MAF=self.fpath_LD_MAF,
-            _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'],
-            _out_prefix=self.out_prefix,
-            _N=self.GWAS_summary.N,
-            _N_max_iter=self.N_max_iter,
-            _maf_imputed=self.maf_imputed,
-            _r2_pred=self.r2_pred,
-            _ncp=self.ncp,
-            _gcta=self.gcta64,
-            _plink=self.plink
-        )
+            _fpath_sumstats3=d_curated_input['whole']['sumstats'], _fpath_ref_ld=d_curated_input['whole']['ld'],
+            _fpath_ref_bfile=self.fpath_LD_SNP_HLA, _fpath_ref_MAF=self.fpath_LD_MAF,
+            _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'], _out_prefix=self.out_prefix, _N=self.GWAS_summary.N,
+            _r2_pred=self.r2_pred, _ncp=self.ncp, _maf_imputed=self.maf_imputed, _N_max_iter=self.N_max_iter,
+            _gcta=self.gcta64, _plink=self.plink)
 
         ### export 1 - signal list
         pd.Series(self.l_conditional_signals, name='secondary_signal') \
@@ -184,10 +175,16 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
             self.LDmatrix.term2 \
             -0.5*( self.GWAS_summary.sr_GWAS_summary.values.T @ (np.linalg.solve(self.LDmatrix.df_LD_SNP.values, self.GWAS_summary.sr_GWAS_summary.values)) )
                 # (2025.05.14.) 얘 잠정적으로 `mod_PostCal_Cov.__MAIN__()` 함수 안으로 집어넣었으면 좋겠음.
+                    # (2025.06.28.) No. 혹시나 나중에 N_causal >= 2 할때 여기 있는게 더 나을 듯.
                 # 'fine-mapping_SWCA.py'에서는 문제없이 집어넣었음.
+        print("LL_0: ", self.LL_0)
 
-
+        Lprior_0 = (0 * np.log(self.gamma) + (self.LDmatrix.df_LD.shape[0] - 0) * np.log(1 - self.gamma))
+        print(Lprior_0)
         
+        self.LL_0 += Lprior_0
+        print("LL_0: ", self.LL_0)
+
         ##### run
         print("\n\n==========[1]: calculating LL (for each batch)")
         print("Batch size: {}".format(self.batch_size))
@@ -233,7 +230,7 @@ class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
 
         ##### SWCA
         if self.f_run_SWCR:
-            print("\n\n==========[3]: Step-Wise Conditional Analysis with GCTA COJO.")
+            print("\n\n==========[3]: Step-Wise Conditional Analysis.")
             self.run_SWCA() # `self.fpath_secondary_signals` 가 여기서 채워짐.
         
         
