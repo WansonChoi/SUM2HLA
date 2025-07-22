@@ -448,12 +448,7 @@ def postprepr_LL(_df_result, _rho=0.95,
     
     
     ##### (1.5) sorting
-    df_result_sort = _df_result \
-        .sort_values("LL+Lprior", ascending=False) \
-        .rename_axis("index", axis=0) \
-        .reset_index(drop=False) \
-        .rename_axis("rank", axis=0) \
-        .reset_index(drop=False)
+    df_result_sort = _df_result.sort_values("LL+Lprior", ascending=False)
     
     # print(df_result_sort.head(10))
     # display(df_result_sort.sort_values("LL", ascending=False)) # (Conclusion) 똑같이 나옴, 당연히
@@ -564,21 +559,26 @@ def postprepr_LL(_df_result, _rho=0.95,
         sr_CredibleSet = pd.Series(
             get_credible_set(sr_PP, _rho), index=sr_PP.index, name='CredibleSet'
         )
-        
+
+        sr_rank = pd.Series(list(range(_df_LL_Lprior_sort_sub.shape[0])), name='rank', index=_df_LL_Lprior_sort_sub.index)
+        sr_rank_p = (sr_rank / _df_LL_Lprior_sort_sub.shape[0]).rename("rank_p")
+        sr_rank = sr_rank + 1
         
         df_RETURN = pd.concat(
             [
+                sr_rank, sr_rank_p,
                 _df_LL_Lprior_sort_sub, 
-                sr_diff_abs, 
+                sr_PP,
+                sr_CredibleSet,
+                sr_diff_abs,
                 sr_diff_abs_acc, 
                 sr_logPP,
-                sr_PP,
-                sr_CredibleSet
             ],axis=1
-        )        
+        ) \
+            .loc[:, ['rank', 'rank_p', 'SNP', 'PP', 'CredibleSet', 'LL+Lprior', 'LL+Lprior_diff', 'LL+Lprior_diff_acc', 'logPP']]
 
 
-        return df_RETURN # 여기서 한번 끊자.    
+        return df_RETURN
     
     
     
