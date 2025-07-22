@@ -94,12 +94,10 @@ def transform_observed_SNPs_to_ma(_df_observed_Z, _df_ref_MAF, _N):
 
 
 
-def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_PP, _out_prefix, _N,
-             _module="Bayesian",
-             _f_include_SNPs=False, _f_use_finemapping=True, _f_single_factor_markers=False,
-             _r2_pred=0.6, _ncp=5.2,
-             _maf_imputed=0.05, _N_max_iter=5,
-             _gcta="/home/wschoi/bin/gcta64", _plink="/home/wschoi/miniconda3/bin/plink"):
+def __MAIN__(_fpath_sumstats3, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_PP, _out_prefix, _N,
+             _module="Bayesian", _f_include_SNPs=False, _f_use_finemapping=True, _f_single_factor_markers=False,
+             _r2_pred=0.6, _ncp=5.2, _maf_imputed=0.05, _N_max_iter=5, _gcta="/home/wschoi/bin/gcta64",
+             _plink="/home/wschoi/miniconda3/bin/plink"):
 
 
     ##### (0) load data
@@ -112,14 +110,14 @@ def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_
     df_ref_MAF = pd.read_csv(_fpath_ref_MAF, sep='\s+', header=0).drop(['NCHROBS'], axis=1) \
                     if isinstance(_fpath_ref_MAF, str) else _fpath_ref_MAF
 
-    df_observed_Z = pd.read_csv(_fpath_ss, sep='\t', header=0) \
-                    if isinstance(_fpath_ss, str) else _fpath_ss
+    df_sumstats3 = pd.read_csv(_fpath_sumstats3, sep='\t', header=0) \
+                    if isinstance(_fpath_sumstats3, str) else _fpath_sumstats3
 
 
     
     ##### (1) Summary Imputation
 
-    df_Z_imputed = mod_SummaryImp.__MAIN__(df_observed_Z, df_LDmatrix, df_ref_MAF)
+    df_Z_imputed = mod_SummaryImp.__MAIN__(df_sumstats3, df_LDmatrix, df_ref_MAF)
     df_Z_imputed_r2pred = df_Z_imputed[ df_Z_imputed['r2_pred'] >= _r2_pred ]
 
     df_Z_imputed.to_csv(_out_prefix + ".Z_imputed", sep='\t', header=True, index=False, na_rep="NA")
@@ -184,7 +182,7 @@ def __MAIN__(_fpath_ss, _fpath_ref_ld, _fpath_ref_bfile, _fpath_ref_MAF, _fpath_
         ##### (3) iterate GCTA COJO "--cojo-cond"
 
         df_ma = make_COJO_input(df_Z_imputed, df_ref_MAF, _N, _maf_imputed=_maf_imputed,
-                                _df_ss_SNP=(df_observed_Z if _f_include_SNPs else None))
+                                _df_ss_SNP=(df_sumstats3 if _f_include_SNPs else None))
 
         OUT_ma = _out_prefix + ".maf{}.ma".format(str(_maf_imputed).replace(".", "_"))
         df_ma.to_csv(OUT_ma, sep='\t', header=True, index=False, na_rep="NA")
@@ -228,10 +226,7 @@ if __name__ == '__main__':
         "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_T1DGC.hg19.SNP+HLA",
         "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_T1DGC.hg19.SNP+HLA.FRQ.frq",
         "/data02/wschoi/_hCAVIAR_v2/20250415_SWCA_v2/T1DGC+RA.EUR.GCST002318.hg19.chr6.29-34mb.whole.PP",
-        "/data02/wschoi/_hCAVIAR_v2/20250415_SWCA_v2/20250418_TEST_2.HLA",
-        58284,
-        _f_include_SNPs=False
-    )
+        "/data02/wschoi/_hCAVIAR_v2/20250415_SWCA_v2/20250418_TEST_2.HLA", 58284, _f_include_SNPs=False)
     print("Final secondary signals:")
     print(r_temp)
 
