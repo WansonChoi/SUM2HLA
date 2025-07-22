@@ -8,3 +8,4 @@ tests/
 data/
 external_software/
 .ipynb_checkpoints/
+.vscode/
