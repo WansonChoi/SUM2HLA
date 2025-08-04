@@ -62,7 +62,7 @@ display(get_polymorphic_locus_markers(df_T1D_answer_HLA_SNP_M2447, "SNP_DQB1_327
 
 
 def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
-                                _fpath_ref, _df_ref_LD, _df_ref_FRQ,
+                                _fpath_ref, _df_ref_LD,
                                 _out_prefix,
                                 _ncp=5.2,
                                 _N_max_iter=5, _f_polymoprhic_marker=False,
@@ -70,7 +70,6 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
     
     ##### (0) Preliminaries
 
-    ### out_dir
     os.makedirs(dirname(_out_prefix), exist_ok=True)
 
     ### initial ma file
@@ -136,7 +135,8 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
             _ncp=_ncp
         )
 
-        df_PP_cma_Credible = df_PP_cma[df_PP_cma['CredibleSet']]
+        # df_PP_cma_Credible = df_PP_cma[df_PP_cma['CredibleSet']]
+        df_PP_cma_Credible = df_PP_cma.iloc[[0], :]
         print(df_PP_cma_Credible)
 
         l_condition_next = df_PP_cma_Credible['SNP'].tolist()

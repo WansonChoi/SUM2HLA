@@ -199,9 +199,10 @@ def __MAIN__(_fpath_ss_matched, _fpath_ref_LD, _fpath_ref_MAF):
 
     df_RETURN = pd.concat([df_cond_mean, sr_cvar, sr_r2_pred], axis=1) \
         .rename_axis("SNP", axis=0) \
-        .reset_index("SNP", drop=False) \
-        .merge(df_ref_MAF, on=['SNP'])
+        .reset_index("SNP", drop=False)
 
+    if isinstance(df_ref_MAF, pd.DataFrame):
+        df_RETURN = df_RETURN.merge(df_ref_MAF, on=['SNP'])
 
 
     return df_RETURN
