@@ -156,8 +156,13 @@ def __MAIN__(_fpath_SWCA_out_dict, _out_dir_clumped, _fpath_ref_bfile, _f_old=Fa
     ##### (0) load data
     
     ### (0-1) SWCA output dictionary
-    with open(_fpath_SWCA_out_dict, 'r') as f_dict:
-        d_SWCA_out = json.load(f_dict)
+    if isinstance(_fpath_SWCA_out_dict, str):
+        with open(_fpath_SWCA_out_dict, 'r') as f_dict:
+            d_SWCA_out = json.load(f_dict)
+    elif isinstance(_fpath_SWCA_out_dict, dict):
+        d_SWCA_out = _fpath_SWCA_out_dict.copy()
+    else:
+        raise Exception("Wrong dictionary!")
 
     ### (0-2) Clumped file dictionary
     d_clumped_files = get_SWCA_Each_Round_Clumped_Files(_out_dir_clumped)
@@ -234,7 +239,10 @@ def __MAIN__(_fpath_SWCA_out_dict, _out_dir_clumped, _fpath_ref_bfile, _f_old=Fa
             l_r = [d_r[(_marker, _)] if (_marker, _) in d_r else np.nan for _ in _l_clumped]
             l_r2 = [d_r2[(_marker, _)] if (_marker, _) in d_r2 else np.nan for _ in _l_clumped]
 
-            l_RETURN = [f"{_} (r:{_r},r2:{_r2})" for _, _r, _r2 in zip(_l_clumped, l_r, l_r2)]
+            # l_RETURN = [f"{_} (r:{_r},r2:{_r2})" for _, _r, _r2 in zip(_l_clumped, l_r, l_r2)] # as string
+            # l_RETURN = [(_, _r, _r2) for _, _r, _r2 in zip(_l_clumped, l_r, l_r2)] # as tuple
+            # l_RETURN = [(_, {"r": _r, "r2": _r2}) for _, _r, _r2 in zip(_l_clumped, l_r, l_r2)] # as dictionary
+            l_RETURN = {_: {"r": _r, "r2": _r2} for _, _r, _r2 in zip(_l_clumped, l_r, l_r2)}
 
             d_temp[_marker] = l_RETURN
 
@@ -249,6 +257,13 @@ def __MAIN__(_fpath_SWCA_out_dict, _out_dir_clumped, _fpath_ref_bfile, _f_old=Fa
 
     d_RETURN_step1_2.update(d_RETURN_step1)
     d_RETURN_step2_2.update(d_RETURN_step2)
+
+    """
+    - ROUND_1은 clumping result를 참조할 수 없음. 최초에 SNPs들만 clumping되어 만들어내는 결과이기 때문에.
+    - ROUND_1도 clumping r2값을 참조해서 채점할까 했는데, 애초에 불가능함.
+        - 이걸 알면 채점함수를 좀 더 단순하게 짜도 됨.
+    
+    """
 
 
     return d_RETURN_step1_2, d_RETURN_step2_2
