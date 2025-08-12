@@ -33,12 +33,16 @@ class SIM_output:
         self.l_answer_secondary = _l_answer_secondary
 
 
+        self.df_identified_markers = None
+        self.df_masked_answer = None
+
+
     @classmethod # Factory method 1
-    def from_paths(cls, _fpath_SSFN, _col_output, **kwargs):
+    def from_paths(cls, _fpath_SSFN:str, _col_output:str, _l_answer_primary: list, _l_answer_secondary: list, **kwargs):
 
         df_SSFN = pd.read_csv(_fpath_SSFN, sep='\t', header=0)
 
-        return cls(df_SSFN, _col_output, **kwargs)
+        return cls(df_SSFN, _col_output, _l_answer_primary, _l_answer_secondary, **kwargs)
     
 
     def __repr__(self):
@@ -63,6 +67,96 @@ class SIM_output:
 
 
     ##### Helper functions
+
+    ### 데이터 프레임으로 무슨 marker가 정답으로 나왔는지까지 확인할 수 있게 짠거
+
+    def transform_Dictionaries_to_Identified_Marker(self, _answer_secondary, _l_r2_threshold = (1.0, 0.95, 0.9)):
+
+        def load_dict(_fpath_dict):
+            with open(_fpath_dict, 'r') as f_dict:
+                return json.load(f_dict)
+
+
+        def transform_dict_to_R1_R2_markers(_d_OUTPUT):
+
+            # 일단 간단하게 정말 SUM2HLA가 찍어온 values들만으로 DataFrame만들어봐.
+
+            marker_ROUND_1 = _d_OUTPUT['ROUND_1'][0] if "ROUND_1" in _d_OUTPUT else np.nan
+
+            marker_ROUND_2 = list(_d_OUTPUT['ROUND_2'].keys())[0] if "ROUND_2" in _d_OUTPUT else np.nan
+
+            return marker_ROUND_1, marker_ROUND_2
+
+        # transform_dict_to_R1_R2_markers(d_temp)
+
+
+        def transform_dict_to_R2_markers_with_r2(_d_OUTPUT, _answer_secondary, _r2_threshold=0.9):
+
+            # display(_d_OUTPUT)
+
+            if "ROUND_2" not in _d_OUTPUT:
+                return np.nan
+
+            marker_ROUND2 = list(_d_OUTPUT["ROUND_2"].keys())[0] # single top이라 가정.
+
+            if marker_ROUND2 == _answer_secondary:
+                return marker_ROUND2
+
+            d_temp = _d_OUTPUT["ROUND_2"][marker_ROUND2]
+
+            for _marker_clumped, _d_r_r2 in d_temp.items():
+
+                if _marker_clumped == _answer_secondary and _d_r_r2['r2'] >= _r2_threshold:
+
+                    return _marker_clumped
+
+            return marker_ROUND2 # 결국 못 찾으면 원래대로 return
+
+        # transform_dict_to_R2_markers_with_r2(d_temp, "AA_B_9_31432689_D")
+
+
+        ### main
+
+        sr_dict = self.sr_out_dicts.map(lambda x: load_dict(x))
+
+        sr_R1_R2_markers = sr_dict.map(lambda x: transform_dict_to_R1_R2_markers(x))
+        df_R1_R2_markers = pd.DataFrame(sr_R1_R2_markers.tolist(), columns=["ROUND_1", "ROUND_2"])
+
+        sr_R2_r2_0_99 = sr_dict.map(lambda x: transform_dict_to_R2_markers_with_r2(x, _answer_secondary, 0.99)).rename("ROUND_2_r2_0_99")
+        sr_R2_r2_0_90 = sr_dict.map(lambda x: transform_dict_to_R2_markers_with_r2(x, _answer_secondary, 0.90)).rename("ROUND_2_r2_0_90")
+
+        self.df_identified_markers = df_RETURN = pd.concat(
+            [df_R1_R2_markers, sr_R2_r2_0_99, sr_R2_r2_0_90],
+            axis=1
+        )
+
+        return df_RETURN
+    
+
+    def mask_answer(self, _l_answer_primary=None, _l_answer_secondary=None):
+
+        if not isinstance(self.df_identified_markers, pd.DataFrame):
+            print("Run `transform_Dictionaries_to_Identified_Marker()` first!")
+            return -1
+        
+        l_answer_primary = _l_answer_primary if isinstance(_l_answer_primary, list) else self.l_answer_primary
+        l_answer_secondary = _l_answer_secondary if isinstance(_l_answer_secondary, list) else self.l_answer_secondary
+
+        ### (1) primary
+        df_primary = self.df_identified_markers.iloc[:, [0]].map(lambda x: x in l_answer_primary)
+
+
+        ### (2) secondary
+        df_secondary = self.df_identified_markers.iloc[:, 1:].map(lambda x: x in l_answer_secondary)
+
+        self.df_masked_answer = df_RETURN = pd.concat([df_primary, df_secondary], axis=1)
+
+
+        return df_RETURN
+
+
+    ### procedural하게 짠 구버전 (추후 deprecate하고 싶음.)
+    ## (2025.08.12.) 아래 `check_answers()`와 `check_answers_with_r_r2()`는 deprecate하기로 함. 당장 지우지만 않음.
 
     def check_answers(self, _l_answer_primary=None, _l_answer_secondary=None):
 
@@ -188,6 +282,14 @@ class SIM_output:
         return df_RETURN
 
 
+    def run_v2(self, _label_r2:str):
+
+        self.transform_Dictionaries_to_Identified_Marker(_answer_secondary=_label_r2)
+
+        df_RETURN = self.mask_answer()
+
+        return df_RETURN
+
 
 """
 - 나중에 임의의 simulation의 plot을 그릴일이 있나?
@@ -204,55 +306,65 @@ class SIM_output:
 composiiton하려니까 얘기가 또 살짝 달라지네.
 """
 
+##### Util 함수
+
+"""
+- 필연적으로 multiple `ncp_2nd` values들에 대해 `SIM_output` instances들을 만들거란 말이지.
+- 결국 each instance가 run()함수로 return하는 DataFrames들을 concat해야함.
+- 이걸위해 새로운 class를 도입하자니, 당장 함수 하나로 해결 가능할 것 같음.
+    - 어차피 a SSFN file => `SIM_output` instance => DataFrame by the run() 의 sequence of transformation이라서.
+- 일단 당분간은 이렇게 쓰고, multiple `ncp_2nd` values들에 대해 또 다른 작업을 해야하면 그때 class로 짜자.
+    - class하나 도입하는 것도 은근히 손이 많이 가네.
+"""
+
+def concat_SIM_output(_d_SSFN: dict, _col_output:str, 
+                      _l_answer_primary: list, _l_answer_secondary: list,
+                      _N=None, _suffix = ".r2pred0.6.ma.SWCA.dict"):
+
+    # print(_d_SSFN)
+
+
+    def transform_to_masked_DataFrame(_i, _ncp_2nd, _fpath_SSFN):
+
+        print(f"=====[{_i}]: ncp_2nd {_ncp_2nd:+}")
+
+        SIM_output_temp = SIM_output.from_paths(_fpath_SSFN, _col_output, _l_answer_primary, _l_answer_secondary, _N=_N)
+
+        return SIM_output_temp.run()
+    
+
+    df_RETURN = pd.concat(
+        {_ncp_2nd: transform_to_masked_DataFrame(i, _ncp_2nd, _fpath_SSFN) for i, (_ncp_2nd, _fpath_SSFN) in enumerate(_d_SSFN.items())},
+        names=['ncp_2nd', 'Sim_No']
+    )
+
+
+    return df_RETURN
 
 
 
-    # def check_answers_v0(self, _suffix = ".r2pred0.6.ma.SWCA.dict", _l_answer_primary=None, _l_answer_secondary=None): # Deprecated
 
-    #     _l_answer_primary = _l_answer_primary if isinstance(_l_answer_primary, list) else self.l_answer_primary
-    #     _l_answer_secondary = _l_answer_secondary if isinstance(_l_answer_secondary, list) else self.l_answer_secondary
+def concat_SIM_output_v2(_d_SSFN: dict, _col_output:str, 
+                      _l_answer_primary: list, _l_answer_secondary: list,
+                      _label_r2 = str,
+                      _N=None, _suffix = ".r2pred0.6.ma.SWCA.dict"):
 
-    #     """
-    #     - additional arguments들이 주어지는건 기본적으로 개별적으로 활용해보기 위함임.
-        
-    #     """
+    # print(_d_SSFN)
 
 
-    #     sr_ToMap = self.sr_out_prefix.map(lambda x: x + _suffix)
+    def transform_to_masked_DataFrame(_i, _ncp_2nd, _fpath_SSFN):
+
+        print(f"=====[{_i}]: ncp_2nd {_ncp_2nd:+}")
+
+        SIM_output_temp = SIM_output.from_paths(_fpath_SSFN, _col_output, _l_answer_primary, _l_answer_secondary, _N=_N)
+
+        return SIM_output_temp.run_v2(_label_r2=_label_r2)
+    
+
+    df_RETURN = pd.concat(
+        {_ncp_2nd: transform_to_masked_DataFrame(i, _ncp_2nd, _fpath_SSFN) for i, (_ncp_2nd, _fpath_SSFN) in enumerate(_d_SSFN.items())},
+        names=['ncp_2nd', 'Sim_No']
+    )
 
 
-    #     def check_answer(_fpath_dict, _l_answer_primary: list, _l_answer_secondary: list):
-            
-
-    #         d_SWCA_out = None
-    #         f_correct_primary = None
-    #         f_correct_seconary = None
-
-    #         with open(_fpath_dict, 'r') as f_json:
-    #             d_SWCA_out = json.load(f_json)
-
-
-    #         # print(d_SWCA_out)
-
-
-    #         if "ROUND_1" in d_SWCA_out:
-    #             f_correct_primary = pd.Series(d_SWCA_out['ROUND_1']).isin(_l_answer_primary).any()
-    #         else:
-    #             f_correct_primary = np.nan
-
-
-    #         if "ROUND_2" in d_SWCA_out:
-    #             f_correct_seconary = pd.Series(d_SWCA_out['ROUND_2']).isin(_l_answer_secondary).any()
-    #         else:
-    #             f_correct_seconary = np.nan
-
-
-
-    #         return f_correct_primary, f_correct_seconary 
-
-
-    #     sr_ToMap = sr_ToMap.map(lambda x: check_answer(x, _l_answer_primary, _l_answer_secondary))
-
-    #     df_RETURN = pd.DataFrame(sr_ToMap.tolist(), columns=['checked_1st', 'checked_2nd'])
-
-    #     return df_RETURN
+    return df_RETURN
