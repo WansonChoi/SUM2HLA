@@ -263,7 +263,7 @@ class SIM_output:
 
         sr_ToMap = self.sr_out_dicts.map(lambda x: check_answer(x, _l_answer_secondary, _l_r2_threshold))
 
-        df_RETURN = pd.DataFrame(sr_ToMap.tolist(), columns=[f"correct_secondary_r2_{str(_thresh).replace(".", "_")}" for _thresh in _l_r2_threshold])
+        df_RETURN = pd.DataFrame(sr_ToMap.tolist(), columns=[f"correct_secondary_r2_{str(_thresh).replace('.', '_')}" for _thresh in _l_r2_threshold])
 
         return df_RETURN
 
