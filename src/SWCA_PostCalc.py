@@ -14,7 +14,7 @@ import jax.numpy as jnp
 from jax import jit, vmap, lax
 
 import src.Util as mod_Util
-from SUM2HLA_PostCalc_Cov import yield_configure_batch, generate_LD_matrices_jax, calc_LL_given_batch_jax, postprepr_LL
+from src.SUM2HLA_PostCalc_Cov import yield_configure_batch, generate_LD_matrices_jax, calc_LL_given_batch_jax, postprepr_LL
 
 from datetime import datetime
 

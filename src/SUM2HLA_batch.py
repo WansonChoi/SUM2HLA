@@ -1,4 +1,5 @@
 import os, sys, re
+from os.path import basename, dirname, exists, join
 import numpy as np
 import scipy as sp
 import pandas as pd
@@ -10,53 +11,45 @@ from shutil import which
 import src.INPUT_prepr as INPUT_prepr
 from src.INPUT_LDmatrix import INPUT_LDmatrix
 from src.INPUT_GWAS_summary import INPUT_GWAS_summary
-import src.hCAVIAR_PostCalc_Cov as mod_PostCal_Cov
+import src.SUM2HLA_PostCalc_Cov as mod_PostCal_Cov
 import src.SWCA as SWCA
 
 
 
-class SUM2HLA_batch(): # a single run (batch) of hCAVIAR.
+class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
     def __init__(self, _ss_raw, _ref_prefix, _out_prefix,
-                 _batch_size=30, _f_run_SWCR=True, _N_max_iter=5,
-                 _maf_imputed=0.05, _r2_pred=0.6, _ncp=5.2,
+                 _batch_size=30, 
+                 _f_run_SWCR=True, _N_max_iter=5, _r2_pred=0.6, 
+                 _ncp=5.2,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
-                 _plink=None, _gcta=None
+                 _plink="~/miniconda3/envs/jax_gpu/bin/plink", _gcta=None
     ):
 
-        ##### output path and prefix
-        self.out_prefix = _out_prefix
-        self.out_dir = os.path.dirname(_out_prefix)
-        # self.out_basename = os.path.basename(_out_prefix)
-        self.out_prefix_LD = None
+        ##### INPUT
+
+        ### Raw GWAS summary file
+        self.sumstats1 = _ss_raw
 
 
-        ##### The reference dataset.
+        ### The reference dataset.
         self.d_fpath_LD = {"whole": _ref_prefix + ".NoNA.PSD.ld"} # 예전에 HLA sub-region 별로 짤라서 활용하던대로 둠.
         self.fpath_LD_SNP_HLA = _ref_prefix if _bfile_ToClump is None else _bfile_ToClump
         self.fpath_LD_MAF = _ref_prefix + ".FRQ.frq"
         self.out_prefix_LD = _out_prefix + ".LD"
 
-        
-        ##### Raw GWAS summary file
-        self.sumstats1 = _ss_raw
+
+        ### output path and prefix
+        self.out_prefix = _out_prefix
+        self.out_dir = dirname(_out_prefix)
+        os.makedirs(self.out_dir, exist_ok=True)
 
 
-        ##### Intermediate output of the curation. ('mod_hCAVIAR_prepr')
-        self.out_matched = None
-        self.out_ToClump = None
-        self.out_clumped = None # sumstats2
-        self.out_json = _out_json # sumstats3 (***; ".hCAVIAR_input.json")
+        ### Clumping
+        self.f_do_clump = _f_do_clump
 
 
-        ##### Curated input (LD and GWAS summary)
-        self.LDmatrix:INPUT_LDmatrix = None
-        self.GWAS_summary:INPUT_GWAS_summary = None
-
-        self.LL_0 = None # LL-baseline
-
-        
-        ##### Model Parameters
+        ### Model Parameters
         self.ncp = _ncp
         # print(f"NCP: {self.ncp}")
         self.gamma = 0.01
@@ -65,42 +58,75 @@ class SUM2HLA_batch(): # a single run (batch) of hCAVIAR.
         self.engine = "jax"
 
 
-        ##### External software
-        self.plink = which("plink") if bool(which("plink")) else _plink
-        self.gcta64 = which("gcta") if bool(which("gcta")) else _gcta
 
+        ##### OUTPUT / states
+
+        ### 'mod_SUM2HLA_prepr'
+        self.out_matched = None
+        self.out_ToClump = None
+        self.out_clumped = None # sumstats2
+        self.out_json = _out_json # sumstats3 (***; ".SUM2HLA_input.json")
+
+
+        ### 'SUM2HLA_PostCalc_Cov.py'
+        self.LDmatrix:INPUT_LDmatrix = None
+        self.GWAS_summary:INPUT_GWAS_summary = None
         
-        ##### Output (Accumulator)
+        self.LL_0 = None # LL-baseline
+
         self.OUT_PIP = {_N_causal: None for _N_causal in range(1, self.N_causal + 1)}
         self.OUT_LL_N_causal = {_N_causal: None for _N_causal in range(1, self.N_causal + 1)}
         
         self.OUT_PIP_PP = {_N_causal: None for _N_causal in range(1, self.N_causal + 1)} # PIP를 posterior로 normalize and export.
         self.OUT_PIP_PP_fpath = {_N_causal: {'whole': None} for _N_causal in range(1, self.N_causal + 1)} # filepath
 
-        ##### SWCR with GCTA "--cojo-cond"
+        ## Types of markers to calculate PP.
+        self.l_type = ('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP', 'AA+HLA')
+
+
+        ### SWCR
         # self.N = _N   # `GWAS_summary` class 내에서 가져오도록 바꿈.
         self.ma = None
         self.l_conditional_signals = [] # 여차하면 없애도 됨.
         self.d_conditional_signals = {}
         self.f_run_SWCR = _f_run_SWCR
         self.N_max_iter = _N_max_iter
-        self.maf_imputed = _maf_imputed # (Deprecated, practically. 2025.06.18.)
         self.r2_pred = _r2_pred
 
-
-
-        ##### Clumping
-        self.f_do_clump = _f_do_clump
-
-        ##### Types of markers to calculate PP.
-        self.l_type = ('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP', 'AA+HLA')
-
-
-
-
-    def run_hCAVIAR_prepr(self):
         
-        ##### Interface with the `mod_hCAVIAR_prepr.hCAVIAR_prepr()`.
+
+
+        ### External software
+        self.plink = which("plink") if bool(which("plink")) else _plink
+        self.gcta64 = which("gcta") if bool(which("gcta")) else _gcta
+
+    
+
+    ########## Main helper funcitons ##########
+
+    def __repr__(self):
+        
+        # 클래스 이름을 가져옵니다.
+        class_name = self.__class__.__name__
+        
+        # self.__dict__ 의 모든 아이템을 "key = value" 형태의 문자열로 만듭니다.
+        # 데이터프레임처럼 내용이 긴 속성은 shape만 출력하도록 간단히 처리할 수 있습니다.
+        items = []
+        for key, value in self.__dict__.items():
+            if isinstance(value, pd.DataFrame):
+                items.append(f"{key}=DataFrame(shape={value.shape})")
+            else:
+                # repr(value)를 사용해 문자열에 따옴표가 붙도록 합니다.
+                items.append(f"{key}={repr(value)}")
+        
+        # 모든 속성을 쉼표와 줄바꿈으로 연결하여 보기 좋게 만듭니다.
+        return f"{class_name}(\n  " + ",\n  ".join(items) + "\n)"
+
+
+
+    def run_SUM2HLA_prepr(self):
+        
+        ##### Interface with the `mod_SUM2HLA_prepr.SUM2HLA_prepr()`.
         ## 얘는 나중에 조건부로 안돌리게 만들어야 할 수도 있을 것 같아서 따로 떼어내놓게.
 
         self.out_matched, self.out_ToClump, self.out_clumped, self.out_json = \
@@ -113,6 +139,77 @@ class SUM2HLA_batch(): # a single run (batch) of hCAVIAR.
             )
 
         return self.out_matched, self.out_ToClump, self.out_clumped, self.out_json
+    
+
+
+    def calc_posterior_probabilities(self):
+        
+        ##### load the curated input (LD and GWAS summary)
+        with open(self.out_json, 'r') as f_json:
+            d_curated_input = json.load(f_json)
+
+        self.LDmatrix = INPUT_LDmatrix(d_curated_input['whole']['ld'])
+        self.GWAS_summary = INPUT_GWAS_summary(d_curated_input['whole']['sumstats'], self.LDmatrix)
+
+
+
+        ##### calculate LL_0
+        self.LL_0 = \
+            self.LDmatrix.term2 \
+            -0.5*( self.GWAS_summary.sr_GWAS_summary.values.T @ (np.linalg.solve(self.LDmatrix.df_LD_SNP.values, self.GWAS_summary.sr_GWAS_summary.values)) )
+                # (2025.05.14.) 얘 잠정적으로 `mod_PostCal_Cov.__MAIN__()` 함수 안으로 집어넣었으면 좋겠음.
+                    # (2025.06.28.) No. 혹시나 나중에 N_causal >= 2 할때 여기 있는게 더 나을 듯.
+                # 'fine-mapping_SWCA.py'에서는 문제없이 집어넣었음.
+        print("LL_0: ", self.LL_0)
+
+        Lprior_0 = (0 * np.log(self.gamma) + (self.LDmatrix.df_LD.shape[0] - 0) * np.log(1 - self.gamma))
+        print(Lprior_0)
+        
+        self.LL_0 += Lprior_0
+        print("LL_0: ", self.LL_0)
+
+        ##### run
+        print("\n\n==========[1]: calculating LL (for each batch)")
+        print("Batch size: {}".format(self.batch_size))
+        for _N_causal in range(1, self.N_causal + 1):
+
+            t_start_calcLL = datetime.now()
+            
+            self.OUT_PIP[_N_causal], self.OUT_LL_N_causal[_N_causal] = \
+                mod_PostCal_Cov.__MAIN__(
+                    _N_causal, self.GWAS_summary, self.LDmatrix, self.LL_0,
+                    _batch_size=self.batch_size, _gamma=self.gamma, _ncp=self.ncp, _engine=self.engine
+                )
+        
+            t_end_calcLL = datetime.now()
+
+            print("\nTotal time for the LL when `N_causal`={}: {}".format(_N_causal, t_end_calcLL - t_start_calcLL))
+
+
+        
+        ##### Postprocessing
+        print("\n\n==========[2]: postprocessing and export")
+        for _N_causal in range(1, self.N_causal + 1):
+            
+            df_PP = pd.DataFrame({
+                "SNP": self.LDmatrix.df_LD.columns,
+                "LL+Lprior": self.OUT_PIP[_N_causal]
+            })
+
+            # df_PP.to_csv(self.out_prefix + ".before_postprepr.txt", sep='\t', header=True, index=False, na_rep="NA")
+    
+            self.OUT_PIP_PP[_N_causal] = \
+                mod_PostCal_Cov.postprepr_LL(df_PP, _l_type=self.l_type) # 여기서 return되는건 DataFrame의 dictionary임.
+
+            for _type, _df_PP in self.OUT_PIP_PP[_N_causal].items():
+
+                out_temp = self.out_prefix + ".{}.PP".format(_type)
+                _df_PP.to_csv(out_temp, sep='\t', header=True, index=False, na_rep="NA")
+
+                ## `_df_PP`를 fwrite했으면 그냥 file path를 저장.
+                self.OUT_PIP_PP_fpath[_N_causal][_type] = out_temp
+
+        return 0
 
 
 
@@ -127,7 +224,7 @@ class SUM2HLA_batch(): # a single run (batch) of hCAVIAR.
             return -1
 
         
-        ### load the '*.hCAVIAR_input.json'
+        ### load the '*.SUM2HLA_input.json'
         with open(self.out_json, 'r') as f_json:
             d_curated_input = json.load(f_json)
 
@@ -138,14 +235,6 @@ class SUM2HLA_batch(): # a single run (batch) of hCAVIAR.
             _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'], _out_prefix=self.out_prefix, _N=self.GWAS_summary.N,
             _r2_pred=self.r2_pred, _ncp=self.ncp, _maf_imputed=self.maf_imputed, _N_max_iter=self.N_max_iter,
             _gcta=self.gcta64, _plink=self.plink)
-
-        ### export 1 - signal list
-        pd.Series(self.l_conditional_signals, name='secondary_signal') \
-            .to_csv(self.ma + ".SWCA.snplist", header=False, index=False, na_rep='NA')
-
-        ### export 2 - signal dictionary
-        with open(self.ma + ".SWCA.dict", 'w') as f_SWCA_dict:
-            json.dump(self.d_conditional_signals, f_SWCA_dict, indent=4)
         
 
         return self.l_conditional_signals, self.d_conditional_signals, self.ma
@@ -156,8 +245,8 @@ class SUM2HLA_batch(): # a single run (batch) of hCAVIAR.
 
         ##### has the curated main input?
         if self.out_json == None:
-            print("\n\n==========[0]: preprocessing hCAVIAR input")
-            self.run_hCAVIAR_prepr()
+            print("\n\n==========[0]: preprocessing SUM2HLA input")
+            self.run_SUM2HLA_prepr()
 
 
         
@@ -239,47 +328,37 @@ class SUM2HLA_batch(): # a single run (batch) of hCAVIAR.
 
 
     
-    def __repr__(self):
+    # def __repr__(self):
 
-        str_raw_ss = \
-            "- GWAS summary: {}".format(self.sumstats1)
+    #     str_raw_ss = \
+    #         "- GWAS summary: {}".format(self.sumstats1)
 
-        str_ref_LD = \
-            "- Reference LD file: {}".format(self.d_fpath_LD)
+    #     str_ref_LD = \
+    #         "- Reference LD file: {}".format(self.d_fpath_LD)
 
-        str_ref_GT = \
-            "- Reference genotype: {}".format(self.fpath_LD_SNP_HLA) if self.f_do_clump else \
-            "- No Clumping!"
+    #     str_ref_GT = \
+    #         "- Reference genotype: {}".format(self.fpath_LD_SNP_HLA) if self.f_do_clump else \
+    #         "- No Clumping!"
 
         
-        str_curated_input = \
-            "- Curated input: {}".format(self.out_json) if bool(self.out_json) else ""
+    #     str_curated_input = \
+    #         "- Curated input: {}".format(self.out_json) if bool(self.out_json) else ""
 
-        str_PP = \
-            "- Output Posterior probability: {}".format(self.OUT_PIP_PP_fpath)
+    #     str_PP = \
+    #         "- Output Posterior probability: {}".format(self.OUT_PIP_PP_fpath)
 
-        ### external software
-        str_plink = \
-            "- plink: {}".format(self.plink)
-        str_gcta64 = \
-            "- gcta64: {}".format(self.gcta64)
+    #     ### external software
+    #     str_plink = \
+    #         "- plink: {}".format(self.plink)
+    #     str_gcta64 = \
+    #         "- gcta64: {}".format(self.gcta64)
 
 
-        ### Types of markers to calculate PP
-        str_l_type = \
-            f"- Types of markers to calculate PP: {self.l_type}"
+    #     ### Types of markers to calculate PP
+    #     str_l_type = \
+    #         f"- Types of markers to calculate PP: {self.l_type}"
         
-        l_RETURN = [str_raw_ss, str_ref_LD, str_ref_GT, str_curated_input, str_PP,
-                   str_plink, str_gcta64, str_l_type]
+    #     l_RETURN = [str_raw_ss, str_ref_LD, str_ref_GT, str_curated_input, str_PP,
+    #                str_plink, str_gcta64, str_l_type]
 
-        return '\n'.join(l_RETURN)
-
-
-
-    def set_PLINK_path(self, _plink):
-        self.plink = _plink
-        return 0
-
-    def set_GCTA_path(self, _gcta):
-        self.gcta64 = _gcta
-        return 0
+    #     return '\n'.join(l_RETURN)
