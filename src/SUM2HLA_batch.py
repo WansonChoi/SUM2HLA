@@ -15,7 +15,7 @@ import src.SWCA as SWCA
 
 
 
-class hCAVIAR_batch(): # a single run (batch) of hCAVIAR.
+class SUM2HLA_batch(): # a single run (batch) of hCAVIAR.
 
     def __init__(self, _ss_raw, _ref_prefix, _out_prefix,
                  _batch_size=30, _f_run_SWCR=True, _N_max_iter=5,

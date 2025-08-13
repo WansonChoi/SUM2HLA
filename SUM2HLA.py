@@ -2,7 +2,7 @@ from os.path import basename
 from datetime import datetime
 
 import src.check_arguments as check_arguments
-from src.hCAVIAR_batch import hCAVIAR_batch
+from src.SUM2HLA_batch import SUM2HLA_batch
 import argparse, textwrap
 
 
@@ -67,12 +67,12 @@ if __name__ == "__main__":
     t_start = datetime.now()
     print(f"[ {basename(__file__)} ]: Start. ({t_start})")
 
-    a_batch_hCAVIAR = hCAVIAR_batch(
+    a_batch_SUM2HLA = SUM2HLA_batch(
         args.sumstats, args.ref, args.out,
         _batch_size=args.batch_size, _f_run_SWCR=(not args.skip_SWCA),
     )
-    print(a_batch_hCAVIAR)
-    a_batch_hCAVIAR.__MAIN__()
+    print(a_batch_SUM2HLA)
+    a_batch_SUM2HLA.__MAIN__()
 
     t_end = datetime.now()
     print(f"\n\n[ {basename(__file__)} ]: End. ({t_end})")
