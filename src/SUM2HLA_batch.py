@@ -14,6 +14,8 @@ from src.INPUT_GWAS_summary import INPUT_GWAS_summary
 import src.SUM2HLA_PostCalc_Cov as mod_PostCal_Cov
 import src.SWCA as SWCA
 
+import logging
+logger_SUM2HLA_batch = logging.getLogger(__name__)
 
 
 class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
@@ -23,8 +25,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
                  _f_run_SWCR=True, _N_max_iter=5, _r2_pred=0.6, 
                  _ncp=5.2,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
-                 _plink="~/miniconda3/envs/jax_gpu/bin/plink", _gcta=None,
-                 _gpu_id=0
+                 _plink="~/miniconda3/envs/jax_gpu/bin/plink", _gcta=None
     ):
 
         ##### INPUT
@@ -148,7 +149,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
     def calc_posterior_probabilities(self):
 
         if self.out_json == None:
-            print("You must run the `run_SUM2HLA_prepr()` member function first!")
+            logger_SUM2HLA_batch.error("You must run the `run_SUM2HLA_prepr()` member function first!")
             return -1
         
 
@@ -228,11 +229,11 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
     def run_SWCA(self, _N_causal=1, _type='whole'): # '_N_causal=1' 일 때만 한다 가정.
 
         if self.out_json == None:
-            print("You must run the `run_SUM2HLA_prepr()` member function first!")
+            logger_SUM2HLA_batch.error("You must run the `run_SUM2HLA_prepr()` member function first!")
             return -1
 
         if self.OUT_PIP_PP_fpath == None:
-            print("You must run the `calc_posterior_probabilities()` member function first!")
+            logger_SUM2HLA_batch.error("You must run the `calc_posterior_probabilities()` member function first!")
             return -1
 
         # if self.GWAS_summary == None: # 얘는 어차피 바로 위 조건문과 redundant한 것 같음.
@@ -265,6 +266,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
     def run(self):
 
         self.run_SUM2HLA_prepr()
+
         self.calc_posterior_probabilities()
 
         if self.f_run_SWCR:
