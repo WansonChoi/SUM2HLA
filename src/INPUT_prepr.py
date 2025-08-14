@@ -504,7 +504,7 @@ def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
         _col_SNP_ss='SNP'
     )
     
-    out_json = _out_prefix_ss+".hCAVIAR_input.json"
+    out_json = _out_prefix_ss+".SUM2HLA_input.json"
     
     with open(out_json, 'w') as f_json:
         json.dump(d_RETURN, f_json, indent='\t')

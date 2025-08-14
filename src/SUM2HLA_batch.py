@@ -23,7 +23,8 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
                  _f_run_SWCR=True, _N_max_iter=5, _r2_pred=0.6, 
                  _ncp=5.2,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
-                 _plink="~/miniconda3/envs/jax_gpu/bin/plink", _gcta=None
+                 _plink="~/miniconda3/envs/jax_gpu/bin/plink", _gcta=None,
+                 _gpu_id=0
     ):
 
         ##### INPUT
@@ -61,7 +62,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
         ##### OUTPUT / states
 
-        ### 'mod_SUM2HLA_prepr'
+        ### 'mod_SUM2HLA_prepr()' => 얘가 return하는 main output 4개.
         self.out_matched = None
         self.out_ToClump = None
         self.out_clumped = None # sumstats2
@@ -86,14 +87,14 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
         ### SWCR
         # self.N = _N   # `GWAS_summary` class 내에서 가져오도록 바꿈.
-        self.ma = None
-        self.l_conditional_signals = [] # 여차하면 없애도 됨.
-        self.d_conditional_signals = {}
+        # self.ma = None
+        # self.l_conditional_signals = [] # 여차하면 없애도 됨.
+        # self.d_conditional_signals = {}
         self.f_run_SWCR = _f_run_SWCR
         self.N_max_iter = _N_max_iter
         self.r2_pred = _r2_pred
 
-        
+        self.SWCA_batch:SWCA.SWCA = None
 
 
         ### External software
@@ -125,7 +126,9 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
 
     def run_SUM2HLA_prepr(self):
-        
+
+        print("\n\n==========[0]: preprocessing SUM2HLA input")
+
         ##### Interface with the `mod_SUM2HLA_prepr.SUM2HLA_prepr()`.
         ## 얘는 나중에 조건부로 안돌리게 만들어야 할 수도 있을 것 같아서 따로 떼어내놓게.
 
@@ -143,7 +146,13 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
 
     def calc_posterior_probabilities(self):
+
+        if self.out_json == None:
+            print("You must run the `run_SUM2HLA_prepr()` member function first!")
+            return -1
         
+
+
         ##### load the curated input (LD and GWAS summary)
         with open(self.out_json, 'r') as f_json:
             d_curated_input = json.load(f_json)
@@ -167,6 +176,8 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
         
         self.LL_0 += Lprior_0
         print("LL_0: ", self.LL_0)
+
+
 
         ##### run
         print("\n\n==========[1]: calculating LL (for each batch)")
@@ -209,156 +220,141 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
                 ## `_df_PP`를 fwrite했으면 그냥 file path를 저장.
                 self.OUT_PIP_PP_fpath[_N_causal][_type] = out_temp
 
-        return 0
+
+        return self.OUT_PIP_PP_fpath
 
 
 
     def run_SWCA(self, _N_causal=1, _type='whole'): # '_N_causal=1' 일 때만 한다 가정.
 
-        if not os.path.exists(self.out_json):
-            print("The '*.hCAVIAR_input.json' file not found! ('*.hCAVIAR_input.json'")
+        if self.out_json == None:
+            print("You must run the `run_SUM2HLA_prepr()` member function first!")
             return -1
 
-        if not os.path.exists(self.OUT_PIP_PP_fpath[_N_causal][_type]):
-            print("The posterior probability file not found!")
+        if self.OUT_PIP_PP_fpath == None:
+            print("You must run the `calc_posterior_probabilities()` member function first!")
             return -1
 
+        # if self.GWAS_summary == None: # 얘는 어차피 바로 위 조건문과 redundant한 것 같음.
+
+
+
+        print("\n\n==========[3]: Step-Wise Conditional Analysis.")
         
         ### load the '*.SUM2HLA_input.json'
         with open(self.out_json, 'r') as f_json:
             d_curated_input = json.load(f_json)
 
 
-        self.l_conditional_signals, self.d_conditional_signals, self.ma = SWCA.__MAIN__(
-            _fpath_sumstats3=d_curated_input['whole']['sumstats'], _fpath_ref_ld=d_curated_input['whole']['ld'],
-            _fpath_ref_bfile=self.fpath_LD_SNP_HLA, _fpath_ref_MAF=self.fpath_LD_MAF,
-            _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'], _out_prefix=self.out_prefix, _N=self.GWAS_summary.N,
-            _r2_pred=self.r2_pred, _ncp=self.ncp, _maf_imputed=self.maf_imputed, _N_max_iter=self.N_max_iter,
-            _gcta=self.gcta64, _plink=self.plink)
+        self.SWCA_batch = SWCA.SWCA.from_paths(
+            _fpath_sumstats3=d_curated_input['whole']['sumstats'], 
+            _fpath_ref_ld=d_curated_input['whole']['ld'],
+            _fpath_ref_bfile=self.fpath_LD_SNP_HLA, 
+            _fpath_ref_MAF=self.fpath_LD_MAF,
+            _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'], 
+            _out_prefix=self.out_prefix, 
+            _N=self.GWAS_summary.N,
+            _r2_pred=self.r2_pred, _ncp=self.ncp, _N_max_iter=self.N_max_iter,
+            _plink=self.plink)
         
 
-        return self.l_conditional_signals, self.d_conditional_signals, self.ma
-
+        return self.SWCA_batch.run()
     
-    
-    def __MAIN__(self):
-
-        ##### has the curated main input?
-        if self.out_json == None:
-            print("\n\n==========[0]: preprocessing SUM2HLA input")
-            self.run_SUM2HLA_prepr()
 
 
-        
-        ##### load the curated input (LD and GWAS summary)
-        with open(self.out_json, 'r') as f_json:
-            d_curated_input = json.load(f_json)
+    def run(self):
 
-        self.LDmatrix = INPUT_LDmatrix(d_curated_input['whole']['ld'])
-        self.GWAS_summary = INPUT_GWAS_summary(d_curated_input['whole']['sumstats'], self.LDmatrix)
+        self.run_SUM2HLA_prepr()
+        self.calc_posterior_probabilities()
 
-
-
-        ##### calculate LL_0
-        self.LL_0 = \
-            self.LDmatrix.term2 \
-            -0.5*( self.GWAS_summary.sr_GWAS_summary.values.T @ (np.linalg.solve(self.LDmatrix.df_LD_SNP.values, self.GWAS_summary.sr_GWAS_summary.values)) )
-                # (2025.05.14.) 얘 잠정적으로 `mod_PostCal_Cov.__MAIN__()` 함수 안으로 집어넣었으면 좋겠음.
-                    # (2025.06.28.) No. 혹시나 나중에 N_causal >= 2 할때 여기 있는게 더 나을 듯.
-                # 'fine-mapping_SWCA.py'에서는 문제없이 집어넣었음.
-        print("LL_0: ", self.LL_0)
-
-        Lprior_0 = (0 * np.log(self.gamma) + (self.LDmatrix.df_LD.shape[0] - 0) * np.log(1 - self.gamma))
-        print(Lprior_0)
-        
-        self.LL_0 += Lprior_0
-        print("LL_0: ", self.LL_0)
-
-        ##### run
-        print("\n\n==========[1]: calculating LL (for each batch)")
-        print("Batch size: {}".format(self.batch_size))
-        for _N_causal in range(1, self.N_causal + 1):
-
-            t_start_calcLL = datetime.now()
-            
-            self.OUT_PIP[_N_causal], self.OUT_LL_N_causal[_N_causal] = \
-                mod_PostCal_Cov.__MAIN__(
-                    _N_causal, self.GWAS_summary, self.LDmatrix, self.LL_0,
-                    _batch_size=self.batch_size, _gamma=self.gamma, _ncp=self.ncp, _engine=self.engine
-                )
-        
-            t_end_calcLL = datetime.now()
-
-            print("\nTotal time for the LL when `N_causal`={}: {}".format(_N_causal, t_end_calcLL - t_start_calcLL))
-
-
-        
-        ##### Postprocessing
-        print("\n\n==========[2]: postprocessing and export")
-        for _N_causal in range(1, self.N_causal + 1):
-            
-            df_PP = pd.DataFrame({
-                "SNP": self.LDmatrix.df_LD.columns,
-                "LL+Lprior": self.OUT_PIP[_N_causal]
-            })
-
-            # df_PP.to_csv(self.out_prefix + ".before_postprepr.txt", sep='\t', header=True, index=False, na_rep="NA")
-    
-            self.OUT_PIP_PP[_N_causal] = \
-                mod_PostCal_Cov.postprepr_LL(df_PP, _l_type=self.l_type) # 여기서 return되는건 DataFrame의 dictionary임.
-
-            for _type, _df_PP in self.OUT_PIP_PP[_N_causal].items():
-
-                out_temp = self.out_prefix + ".{}.PP".format(_type)
-                _df_PP.to_csv(out_temp, sep='\t', header=True, index=False, na_rep="NA")
-
-                ## `_df_PP`를 fwrite했으면 그냥 file path를 저장.
-                self.OUT_PIP_PP_fpath[_N_causal][_type] = out_temp
-
-
-
-        ##### SWCA
         if self.f_run_SWCR:
-            print("\n\n==========[3]: Step-Wise Conditional Analysis.")
-            self.run_SWCA() # `self.fpath_secondary_signals` 가 여기서 채워짐.
-        
-        
-        
-        return self.OUT_PIP, self.OUT_LL_N_causal
+            self.run_SWCA()
 
+        return 0
 
     
-    # def __repr__(self):
+    
+    # def __MAIN__(self):
 
-    #     str_raw_ss = \
-    #         "- GWAS summary: {}".format(self.sumstats1)
+    #     ##### has the curated main input?
+    #     if self.out_json == None:
+    #         print("\n\n==========[0]: preprocessing SUM2HLA input")
+    #         self.run_SUM2HLA_prepr()
 
-    #     str_ref_LD = \
-    #         "- Reference LD file: {}".format(self.d_fpath_LD)
-
-    #     str_ref_GT = \
-    #         "- Reference genotype: {}".format(self.fpath_LD_SNP_HLA) if self.f_do_clump else \
-    #         "- No Clumping!"
 
         
-    #     str_curated_input = \
-    #         "- Curated input: {}".format(self.out_json) if bool(self.out_json) else ""
+    #     ##### load the curated input (LD and GWAS summary)
+    #     with open(self.out_json, 'r') as f_json:
+    #         d_curated_input = json.load(f_json)
 
-    #     str_PP = \
-    #         "- Output Posterior probability: {}".format(self.OUT_PIP_PP_fpath)
-
-    #     ### external software
-    #     str_plink = \
-    #         "- plink: {}".format(self.plink)
-    #     str_gcta64 = \
-    #         "- gcta64: {}".format(self.gcta64)
+    #     self.LDmatrix = INPUT_LDmatrix(d_curated_input['whole']['ld'])
+    #     self.GWAS_summary = INPUT_GWAS_summary(d_curated_input['whole']['sumstats'], self.LDmatrix)
 
 
-    #     ### Types of markers to calculate PP
-    #     str_l_type = \
-    #         f"- Types of markers to calculate PP: {self.l_type}"
+
+    #     ##### calculate LL_0
+    #     self.LL_0 = \
+    #         self.LDmatrix.term2 \
+    #         -0.5*( self.GWAS_summary.sr_GWAS_summary.values.T @ (np.linalg.solve(self.LDmatrix.df_LD_SNP.values, self.GWAS_summary.sr_GWAS_summary.values)) )
+    #             # (2025.05.14.) 얘 잠정적으로 `mod_PostCal_Cov.__MAIN__()` 함수 안으로 집어넣었으면 좋겠음.
+    #                 # (2025.06.28.) No. 혹시나 나중에 N_causal >= 2 할때 여기 있는게 더 나을 듯.
+    #             # 'fine-mapping_SWCA.py'에서는 문제없이 집어넣었음.
+    #     print("LL_0: ", self.LL_0)
+
+    #     Lprior_0 = (0 * np.log(self.gamma) + (self.LDmatrix.df_LD.shape[0] - 0) * np.log(1 - self.gamma))
+    #     print(Lprior_0)
         
-    #     l_RETURN = [str_raw_ss, str_ref_LD, str_ref_GT, str_curated_input, str_PP,
-    #                str_plink, str_gcta64, str_l_type]
+    #     self.LL_0 += Lprior_0
+    #     print("LL_0: ", self.LL_0)
 
-    #     return '\n'.join(l_RETURN)
+    #     ##### run
+    #     print("\n\n==========[1]: calculating LL (for each batch)")
+    #     print("Batch size: {}".format(self.batch_size))
+    #     for _N_causal in range(1, self.N_causal + 1):
+
+    #         t_start_calcLL = datetime.now()
+            
+    #         self.OUT_PIP[_N_causal], self.OUT_LL_N_causal[_N_causal] = \
+    #             mod_PostCal_Cov.__MAIN__(
+    #                 _N_causal, self.GWAS_summary, self.LDmatrix, self.LL_0,
+    #                 _batch_size=self.batch_size, _gamma=self.gamma, _ncp=self.ncp, _engine=self.engine
+    #             )
+        
+    #         t_end_calcLL = datetime.now()
+
+    #         print("\nTotal time for the LL when `N_causal`={}: {}".format(_N_causal, t_end_calcLL - t_start_calcLL))
+
+
+        
+    #     ##### Postprocessing
+    #     print("\n\n==========[2]: postprocessing and export")
+    #     for _N_causal in range(1, self.N_causal + 1):
+            
+    #         df_PP = pd.DataFrame({
+    #             "SNP": self.LDmatrix.df_LD.columns,
+    #             "LL+Lprior": self.OUT_PIP[_N_causal]
+    #         })
+
+    #         # df_PP.to_csv(self.out_prefix + ".before_postprepr.txt", sep='\t', header=True, index=False, na_rep="NA")
+    
+    #         self.OUT_PIP_PP[_N_causal] = \
+    #             mod_PostCal_Cov.postprepr_LL(df_PP, _l_type=self.l_type) # 여기서 return되는건 DataFrame의 dictionary임.
+
+    #         for _type, _df_PP in self.OUT_PIP_PP[_N_causal].items():
+
+    #             out_temp = self.out_prefix + ".{}.PP".format(_type)
+    #             _df_PP.to_csv(out_temp, sep='\t', header=True, index=False, na_rep="NA")
+
+    #             ## `_df_PP`를 fwrite했으면 그냥 file path를 저장.
+    #             self.OUT_PIP_PP_fpath[_N_causal][_type] = out_temp
+
+
+
+    #     ##### SWCA
+    #     if self.f_run_SWCR:
+    #         print("\n\n==========[3]: Step-Wise Conditional Analysis.")
+    #         self.run_SWCA() # `self.fpath_secondary_signals` 가 여기서 채워짐.
+        
+        
+        
+    #     return self.OUT_PIP, self.OUT_LL_N_causal
