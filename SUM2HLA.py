@@ -1,5 +1,9 @@
+import os
 from os.path import basename
 from datetime import datetime
+
+import jax
+
 
 import src.check_arguments as check_arguments
 from src.SUM2HLA_batch import SUM2HLA_batch
@@ -13,7 +17,7 @@ if __name__ == "__main__":
                                      description=textwrap.dedent('''\
     ###########################################################################################
 
-        hCAVIAR.py
+        SUM2HLA.py
 
 
     ###########################################################################################
@@ -38,6 +42,9 @@ if __name__ == "__main__":
     parser.add_argument("--skip-SWCA", help="Skip the StepWise Conditional Analysis (SWCA).",
                         action="store_true")
 
+    parser.add_argument("--gpu-id", help="A GPU ID to use. (applied only when GPUs are available)", 
+                        default="0", metavar="")
+
 
     ##### [1] Argument parsing #####
 
@@ -53,7 +60,6 @@ if __name__ == "__main__":
 
     ### < for Publish > ###
     args = parser.parse_args()
-
     print(args)
 
     ### checking arguments beforehand.
@@ -61,8 +67,22 @@ if __name__ == "__main__":
         raise RuntimeError('Some arguments are incorrect. Please check your arguments')
 
 
+    """
+    - JAX와 관련된 것들 어떤것들 보다 내가 의도한 GPU allocation이 먼저 일어나야 함.
+    """
+
 
     ##### [2] Main #####
+
+    ### GPU setting
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu_id) # CPU만 주어졌을 때는 effect 없음.
+
+    jax_platform = jax.lib.xla_bridge.get_backend().platform
+    print(f"JAX with {jax_platform}")
+    if jax_platform == 'gpu':
+        print(f"Using gpu(id={os.environ["CUDA_VISIBLE_DEVICES"]})")
+
+
 
     t_start = datetime.now()
     print(f"[ {basename(__file__)} ]: Start. ({t_start})")
