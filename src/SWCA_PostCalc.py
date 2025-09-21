@@ -7,6 +7,8 @@
 
 import os
 from os.path import basename, dirname, join
+import subprocess
+import json
 
 import pandas as pd
 import numpy as np
@@ -176,11 +178,36 @@ def __MAIN__(_fpath_cma, _fpath_ref, _fpath_ref_LD, _out_dir,
 
     ##### (1) prepr - clumping
 
+    ### run the PLINK clumping
+    def run_PLINK_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix, _plink):
+
+        cmd = [
+            _plink,
+            "--clump", _fpath_ToClump,
+            "--bfile", _fpath_LD_SNP_HLA,
+            "--out", _out_prefix,
+            "--allow-no-sex", "--keep-allele-order"
+        ]
+
+        try:
+            subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+
+        except subprocess.CalledProcessError as e:
+            print(json.dumps(cmd, indent='\t'))
+            raise e
+
+        # except: # 다른 에러들도 마지막 command보여주고 주어진 error 보여주도록
+        #     print(json.dumps(cmd, indent='\t'))
+        #     raise
+
+        return _out_prefix + ".clumped"        
+
+
     ToClump = join(_out_dir, basename(_fpath_cma) + ".ToClump")
     df_cma.rename({"pC": "P"}, axis=1).loc[:, ['SNP', 'P']] \
             .to_csv(ToClump, sep='\t', header=True, index=False, na_rep="NA")
 
-    OUT_clump = mod_Util.run_PLINK_clump(ToClump, _fpath_ref, join(_out_dir, basename(_fpath_cma) + ".CLUMP"), _plink)
+    OUT_clump = run_PLINK_clump(ToClump, _fpath_ref, join(_out_dir, basename(_fpath_cma) + ".CLUMP"), _plink)
 
 
 
