@@ -137,8 +137,8 @@ class SIM_input:
 
         self.df_SSFN = pd.concat(
             [
-                pd.Series([join(self.out_dir_SUMSTATS, f"Sim_No.{i+1}.sumstats") for i in np.arange(1000)], name='fpath_IN'),
-                pd.Series([join(self.out_dir_OUT, f"Sim_No.{i+1}") for i in np.arange(1000)], name='fpath_OUT')
+                pd.Series([join(self.out_dir_SUMSTATS, f"Sim_No.{i+1}.sumstats") for i in np.arange(self.N_sim)], name='fpath_IN'),
+                pd.Series([join(self.out_dir_OUT, f"Sim_No.{i+1}") for i in np.arange(self.N_sim)], name='fpath_OUT')
             ],
             axis=1
         )

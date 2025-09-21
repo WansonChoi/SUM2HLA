@@ -8,6 +8,231 @@ from datetime import datetime
 import src.Util as Util
 
 
+class SIM_output_scenario_1:
+
+    def __init__(self, _df_SSFN:pd.DataFrame, _col_output:str, _l_answer_primary: list,
+                 _N=None, _suffix = ".whole.PP", _suffix_ma = ".ma", _suffix_ma_r2pred = ".r2pred0.6.ma", _label_failed = "Failed"):
+
+        self.df_SSFN = _df_SSFN.copy()
+        self.N = _N
+        if isinstance(_N, int): self.df_SSFN = self.df_SSFN.iloc[:_N, :]
+
+        self.l_answer_primary = _l_answer_primary
+
+        self.col_output = _col_output
+
+
+        ## SUM2HLA
+        self.sr_out_PP = self.df_SSFN[_col_output].map(lambda x: x + _suffix).rename("OUT")
+
+        self.sr_identified_markers = None
+        self.sr_masked_answer = None
+        self.sr_masked_answer_2 = None # without failed cases
+
+
+        ## ma
+        self.sr_out_ma = self.df_SSFN[_col_output].map(lambda x: x + _suffix_ma).rename("OUT_ma")
+
+        self.sr_identified_markers_ma = None
+        self.sr_masked_answer_ma = None
+        self.sr_masked_answer_2_ma = None # without failed cases
+
+
+        ## ma_r2pred
+        self.sr_out_ma_r2pred = self.df_SSFN[_col_output].map(lambda x: x + _suffix_ma_r2pred).rename("OUT_ma_r2pred")
+
+        self.sr_identified_markers_ma_r2pred = None
+        self.sr_masked_answer_ma_r2pred = None
+        self.sr_masked_answer_2_ma_r2pred = None # without failed cases
+
+
+        self.label_failed = _label_failed
+
+
+
+
+
+    def __repr__(self):
+        
+        # 클래스 이름을 가져옵니다.
+        class_name = self.__class__.__name__
+        
+        # self.__dict__ 의 모든 아이템을 "key = value" 형태의 문자열로 만듭니다.
+        # 데이터프레임처럼 내용이 긴 속성은 shape만 출력하도록 간단히 처리할 수 있습니다.
+        items = []
+        for key, value in self.__dict__.items():
+            if isinstance(value, pd.DataFrame):
+                items.append(f"{key}=DataFrame(shape={value.shape})")
+            elif isinstance(value, pd.Series):
+                items.append(f"{key}=Series(shape={value.shape})")
+            else:
+                # repr(value)를 사용해 문자열에 따옴표가 붙도록 합니다.
+                items.append(f"{key}={repr(value)}")
+        
+        # 모든 속성을 쉼표와 줄바꿈으로 연결하여 보기 좋게 만듭니다.
+        return f"{class_name}(\n  " + ",\n  ".join(items) + "\n)"        
+
+
+
+
+
+    def check_all_exsit(self): return self.sr_out_PP.map(lambda x: os.path.exists(x)).rename("exist_all")
+
+
+
+
+    def mask_answer(self):
+        
+        """
+        - scenario 2와 consistent하게 하려면 SWCA dictionary로 해야하는데, 당장 SWCA가 왜인지 실패하는 경우가 있음.
+        - 이거 때문에 scenario 1은 걍 ".whole.PP"만 활용하는걸로.
+        - 마찬가지로, r2 >= 0.9이상으로 같은거로 정답처리할거는 미리 정해서 '_l_answer_primary'로 준다 가정함.
+        
+        """
+
+        ##### (1) transform to the identifeid variant lables
+        def check_identifed(_fpath_output):
+
+            if not os.path.exists(_fpath_output):
+                return self.label_failed # 아예 fail한 경우.
+
+            df_temp = pd.read_csv(_fpath_output, sep='\t', header=0, nrows=10).sort_values("PP", ascending=False)
+
+            return df_temp['SNP'].iat[0]
+        
+
+        self.sr_identified_markers = self.sr_out_PP.map(lambda x: check_identifed(x)).rename("identified")
+
+
+        ##### (2) mask answer
+        def check_answer(_x):
+
+            if _x == self.label_failed: return _x
+
+            return _x in self.l_answer_primary
+
+        self.sr_masked_answer = self.sr_identified_markers.map(lambda x: check_answer(x)).rename("answer_masked")
+
+        ##### (3) exclude failed cases
+        f_failed = self.sr_masked_answer == self.label_failed
+        self.sr_masked_answer_2 = self.sr_masked_answer[~f_failed]
+
+        recall_rate = self.sr_masked_answer_2.value_counts()[True] / self.sr_masked_answer_2.shape[0]
+
+
+        return self.sr_identified_markers, self.sr_masked_answer, self.sr_masked_answer_2, recall_rate
+    
+
+
+    def mask_answer_Z_imputed(self):
+
+        ##### (1) transform to the identifeid variant lables
+        def check_identifed(_fpath_output):
+
+            if not os.path.exists(_fpath_output):
+                return self.label_failed # 아예 fail한 경우.
+
+            df_temp = pd.read_csv(_fpath_output, sep='\t', header=0)
+
+            ## sorting 1 - |Z|
+
+            # idx_sort = df_temp['b'].abs().sort_values(ascending=False).index
+            # df_temp = df_temp.loc[idx_sort, :]
+
+
+            ## sorting 2 - ['p', Z_abs]
+
+            # df_temp['Z_abs'] = df_temp['b'].abs().rename("Z_abs")
+            # df_temp = df_temp.sort_values(['p', 'Z_abs'], ascending=[True, False])
+
+            ## sorting 3 - ['p']
+            df_temp = df_temp.sort_values('p')
+
+
+            return df_temp['SNP'].iat[0]
+        
+
+        self.sr_identified_markers_ma = self.sr_out_ma.map(lambda x: check_identifed(x)).rename("identified")
+
+
+        ##### (2) mask answer // 얜 고대로 쓰면 되네
+        def check_answer(_x):
+
+            if _x == self.label_failed: return _x
+
+            return _x in self.l_answer_primary
+
+        self.sr_masked_answer_ma = self.sr_identified_markers_ma.map(lambda x: check_answer(x)).rename("answer_masked")
+
+
+        ##### (3) exclude failed cases
+        f_failed = self.sr_masked_answer_ma == self.label_failed
+        self.sr_masked_answer_2_ma = self.sr_masked_answer_ma[~f_failed]
+
+
+        recall_rate = self.sr_masked_answer_2_ma.value_counts()[True] / self.sr_masked_answer_2_ma.shape[0]
+
+
+        return self.sr_identified_markers_ma, self.sr_masked_answer_ma, self.sr_masked_answer_2_ma, recall_rate
+
+
+
+    def mask_answer_Z_imputed_r2pred(self):
+
+        ##### (1) transform to the identifeid variant lables
+        def check_identifed(_fpath_output):
+
+            if not os.path.exists(_fpath_output):
+                return self.label_failed # 아예 fail한 경우.
+
+            df_temp = pd.read_csv(_fpath_output, sep='\t', header=0)
+
+            ## sorting 1 - |Z|
+
+            # idx_sort = df_temp['b'].abs().sort_values(ascending=False).index
+            # df_temp = df_temp.loc[idx_sort, :]
+
+
+            ## sorting 2 - ['p', Z_abs]
+
+            # df_temp['Z_abs'] = df_temp['b'].abs().rename("Z_abs")
+            # df_temp = df_temp.sort_values(['p', 'Z_abs'], ascending=[True, False])
+
+
+            ## sorting 3 - ['p']
+            df_temp = df_temp.sort_values('p')
+
+
+            return df_temp['SNP'].iat[0]
+        
+        
+
+        self.sr_identified_markers_ma_r2pred = self.sr_out_ma_r2pred.map(lambda x: check_identifed(x)).rename("identified")
+
+
+        ##### (2) mask answer // 얜 고대로 쓰면 되네
+        def check_answer(_x):
+
+            if _x == self.label_failed: return _x
+
+            return _x in self.l_answer_primary
+
+        self.sr_masked_answer_ma_r2pred = self.sr_identified_markers_ma_r2pred.map(lambda x: check_answer(x)).rename("answer_masked")
+
+
+        ##### (3) exclude failed cases
+        f_failed = self.sr_masked_answer_ma_r2pred == self.label_failed
+        self.sr_masked_answer_2_ma_r2pred = self.sr_masked_answer_ma_r2pred[~f_failed]
+
+
+        recall_rate = self.sr_masked_answer_2_ma_r2pred.value_counts()[True] / self.sr_masked_answer_2_ma_r2pred.shape[0]
+
+
+        return self.sr_identified_markers_ma_r2pred, self.sr_masked_answer_ma_r2pred, self.sr_masked_answer_2_ma_r2pred, recall_rate
+
+
+
+
 class SIM_output:
 
     """
@@ -64,6 +289,7 @@ class SIM_output:
         
         # 모든 속성을 쉼표와 줄바꿈으로 연결하여 보기 좋게 만듭니다.
         return f"{class_name}(\n  " + ",\n  ".join(items) + "\n)"
+
 
 
     ##### Helper functions
@@ -153,6 +379,18 @@ class SIM_output:
 
 
         return df_RETURN
+
+
+
+    def run_v2(self, _label_r2:str):
+
+        self.transform_Dictionaries_to_Identified_Marker(_answer_secondary=_label_r2)
+
+        df_RETURN = self.mask_answer()
+
+        return df_RETURN
+
+
 
 
     ### procedural하게 짠 구버전 (추후 deprecate하고 싶음.)
@@ -282,13 +520,6 @@ class SIM_output:
         return df_RETURN
 
 
-    def run_v2(self, _label_r2:str):
-
-        self.transform_Dictionaries_to_Identified_Marker(_answer_secondary=_label_r2)
-
-        df_RETURN = self.mask_answer()
-
-        return df_RETURN
 
 
 """
@@ -316,6 +547,43 @@ composiiton하려니까 얘기가 또 살짝 달라지네.
 - 일단 당분간은 이렇게 쓰고, multiple `ncp_2nd` values들에 대해 또 다른 작업을 해야하면 그때 class로 짜자.
     - class하나 도입하는 것도 은근히 손이 많이 가네.
 """
+
+def concat_SIM_output_scneario_1(_d_SSFN: dict, _col_output:str="fpath_OUT", 
+                      _l_answer_primary:list = ["AA_DRB1_11_32660115_SPG", "AA_DRB1_13_32660109_HF", "SNP_DRB1_32660115_GC"], 
+                      _suffix = ".whole.PP"):
+
+    # print(_d_SSFN)
+
+    l_sr_answer_masked = []
+
+    for i, (_ncp_1, _fpath_SSFN) in enumerate(_d_SSFN.items()):
+
+        print(f"=====[ ncp {_ncp_1} ]")
+
+        df_SSFN_temp = pd.read_csv(_fpath_SSFN, sep='\t', header=0)
+
+        SIM_output_scenario_1_temp = SIM_output_scenario_1(df_SSFN_temp, _col_output, _l_answer_primary)
+
+        f_all_exsit = SIM_output_scenario_1_temp.check_all_exsit()
+        print(f_all_exsit)
+
+        print(f"All exist?: {f_all_exsit.all()}")
+
+        if not f_all_exsit.all(): 
+            print(f_all_exsit[~f_all_exsit])
+            return -1
+
+        sr_temp = SIM_output_scenario_1_temp.mask_answer()
+
+        l_sr_answer_masked.append(sr_temp.rename(f"{_ncp_1:+}"))
+
+
+    df_RETURN = pd.concat(l_sr_answer_masked, axis=1)
+
+
+    return df_RETURN
+
+
 
 def concat_SIM_output(_d_SSFN: dict, _col_output:str, 
                       _l_answer_primary: list, _l_answer_secondary: list,
