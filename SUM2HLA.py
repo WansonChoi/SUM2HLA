@@ -104,6 +104,7 @@ if __name__ == "__main__":
     parser.add_argument("--gpu-id", help="A GPU ID to use. (applied only when GPUs are available)", 
                         type=int, default=0, metavar="")
 
+    parser.add_argument("--plink-path", help="Path for PLINK exec.", metavar="")
 
     ##### [1] Argument parsing #####
 
@@ -169,14 +170,20 @@ if __name__ == "__main__":
     t_start = datetime.now()
     logger_root.info(f"SUM2HLA start. ({t_start})")
 
-    with redirect_stdout(logger_SUM2HLA_stdout_2):
+    try:
+        with redirect_stdout(logger_SUM2HLA_stdout_2):
 
-        a_batch_SUM2HLA = SUM2HLA_batch(
-            args.sumstats, args.ref, args.out,
-            _batch_size=args.batch_size, _f_run_SWCR=(not args.skip_SWCA),
-        )
-        # print(a_batch_SUM2HLA)
-        a_batch_SUM2HLA.run()
+            a_batch_SUM2HLA = SUM2HLA_batch(
+                args.sumstats, args.ref, args.out,
+                _batch_size=args.batch_size, _f_run_SWCR=(not args.skip_SWCA),
+                _plink=args.plink_path
+            )
+            # print(a_batch_SUM2HLA)
+            a_batch_SUM2HLA.run()
+
+    except Exception as e:
+        logger_root.exception(f"An unhandled exception occurred during SUM2HLA execution:\n{e}")
+        sys.exit(1)
 
     t_end = datetime.now()
     logger_root.info(f"SUM2HLA end. ({t_end})")
