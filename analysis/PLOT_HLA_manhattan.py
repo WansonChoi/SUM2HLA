@@ -167,13 +167,14 @@ class plot_HLA_manhattan_PP():
         top_mask = cotop_mask
 
         _ax.scatter(x[top_mask], y[top_mask],
-                    s=48, color=_color_top, marker='D', edgecolors='black', zorder=2, alpha=0.9, 
+                    s=48, color=_color_top, marker='D', edgecolors='black', zorder=3, alpha=0.9, 
                     label='top PP', clip_on=False)
 
             ## Anotation은 바깥 (main figure)에서 하는걸로. hard-coding / fine-tuining할게 너무 많음.
 
 
-        
+        _ax.vlines(x[top_mask], ymin=0.0, ymax=y[top_mask],
+                   colors=_color_top, linestyles='-', linewidth=(1 / len(x[top_mask])), alpha=0.7, zorder=2)
 
 
         ###### Credible set
@@ -181,7 +182,7 @@ class plot_HLA_manhattan_PP():
 
         # (b) 상위권: 진한 파랑 다이아몬드 (예시)
         _ax.scatter(x[CredibleSet_99_mask], y[CredibleSet_99_mask],
-                    s=16, color=_color_top, marker='D', edgecolors='none', zorder=1, alpha=0.9, label='PP ≥ 0.10',
+                    s=16, color=_color_top, marker='D', edgecolors='none', zorder=2, alpha=0.9, label='PP ≥ 0.10',
                     clip_on=False) # s=28, color='#1f77b4'
 
         ###### 나머지
@@ -190,7 +191,7 @@ class plot_HLA_manhattan_PP():
         # --- 그리기 ---
         # (a) 나머지: 연한 회색 다이아몬드
         _ax.scatter(x[rest_mask], y[rest_mask],
-                    s=16, color='#C9CDD2', marker='D', edgecolors='none', zorder=0, alpha=0.9, label='others')
+                    s=16, color='#C9CDD2', marker='D', edgecolors='none', zorder=1, alpha=0.9, label='others')
 
 
         """
@@ -548,7 +549,7 @@ class plot_Figure_ReA_CLE():
         ax[1].annotate(
             'HLA-DQB1*03',
             xy=(x_top_mask[0], y_top_mask[0]), xycoords="data",
-            xytext=(x_top_mask[0] - 300, y_top_mask[0] - 0.02), textcoords="data",
+            xytext=(x_top_mask[0] - 500, y_top_mask[0] - 0.01), textcoords="data",
             ha="right", va="top",
             arrowprops=dict(
                 arrowstyle="-|>", 
@@ -589,15 +590,16 @@ class plot_Figure_ReA_CLE():
         # ax[1].add_artist(ab)        
 
         ax[1].annotate(
-            "Amino acid pos. 55 with P\n" + r"in HLA-DQ$\beta$1",
+            # "Amino acid pos. 55 with P\n" + r"in HLA-DQ$\beta$1",
+            "Amino acid pos. 55 with P\n" + r"in HLA-DQB1", # 걍 inkscape갈 생각하고.
             xy=(x_top_mask[1], y_top_mask[1]), xycoords="data",
-            xytext=(x_top_mask[1]-1000, y_top_mask[1] - 0.08), textcoords="data",
+            xytext=(x_top_mask[1]-1300, y_top_mask[1] - 0.08), textcoords="data",
             ha="center", va="top",
             arrowprops=dict(
                 arrowstyle="-|>", 
                 color="#636363", 
                 lw=1.0,
-                shrinkA=8, shrinkB=5 # shirnk B를 높일수록 점에서 화살표가 떨어지고, shrinkA를 줄일수록 textbox와 label이가까워짐.
+                shrinkA=8, shrinkB=4.5 # shirnk B를 높일수록 점에서 화살표가 떨어지고, shrinkA를 줄일수록 textbox와 label이가까워짐.
             ),
             fontsize=13,
             # fontproperties=self.arial_italic  # 앞서 정의한 Arial italic 폰트 적용 가능
