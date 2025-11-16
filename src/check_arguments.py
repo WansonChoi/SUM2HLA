@@ -6,7 +6,10 @@ import os
 from os.path import exists, dirname
 import pandas as pd
 
-
+"""
+- 아래 check_sumstats()와 check_reference_data()는 각자 INPUT class에서 하면 되잖아. (2025.07.23.)
+- 시간이 없어서 걍 두기로 함. (2025.11.15.)
+"""
 
 def check_sumstats(_sumstats) -> bool:
 
