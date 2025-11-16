@@ -43,7 +43,7 @@ from shutil import which
 
 from datetime import datetime
 
-from src.Util import is_HLA_locus, run_PLINK_clump
+from src.Util import is_HLA_locus
 
 
 
@@ -455,9 +455,35 @@ def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
     ##### (2) PLINK로 clumping하기.
     if _f_do_clump:
         
+        ### export the input for clumping ("*.ToClump")
         df_matched[['SNP_LD', 'P']].rename({"SNP_LD": "SNP"}, axis=1) \
             .to_csv(_out_prefix_ss + ".ToClump", sep='\t', header=True, index=False, na_rep="NA")
-    
+        
+
+        ### run the PLINK clumping
+        def run_PLINK_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix, _plink):
+
+            cmd = [
+                _plink,
+                "--clump", _fpath_ToClump,
+                "--bfile", _fpath_LD_SNP_HLA,
+                "--out", _out_prefix,
+                "--allow-no-sex", "--keep-allele-order"
+            ]
+
+            try:
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+
+            except subprocess.CalledProcessError as e:
+                print(json.dumps(cmd, indent='\t'))
+                raise e
+
+            # except: # 다른 에러들도 마지막 command보여주고 주어진 error 보여주도록
+            #     print(json.dumps(cmd, indent='\t'))
+            #     raise
+
+            return _out_prefix + ".clumped"        
+        
         out_ToClump = _out_prefix_ss + ".ToClump"
         out_clumped = run_PLINK_clump(out_ToClump, _fpath_LD_SNP_HLA, _out_prefix_ss, _plink)
         # print(out_clumped)
@@ -478,7 +504,7 @@ def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
         _col_SNP_ss='SNP'
     )
     
-    out_json = _out_prefix_ss+".hCAVIAR_input.json"
+    out_json = _out_prefix_ss+".SUM2HLA_input.json"
     
     with open(out_json, 'w') as f_json:
         json.dump(d_RETURN, f_json, indent='\t')

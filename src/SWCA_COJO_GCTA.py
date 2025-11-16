@@ -129,30 +129,34 @@ def sort_COJO_result_cond(_fpath_COJO_cond):
 
 
 def iterate_GCTA_COJO(_fpath_ma, _initial_top_signal, _fpath_ref_bfile, _fpath_ref_ld, _fpath_ref_MAF, _out_prefix,
-                      _N_max_iter=100, _f_use_finemapping=True, _f_single_factor_markers=True,
+                      _N_max_iter=5, _f_use_finemapping=True, _f_single_factor_markers=False,
                       _gcta="/home/wschoi/bin/gcta64", _plink="/home/wschoi/miniconda3/bin/plink"):
 
-    ## 얘가 main varaible
+    os.makedirs(dirname(_out_prefix), exist_ok=True)
 
     ## (2025.04.25.) initial signal도 single residue marker로 전환해줘야 함.
     if _f_single_factor_markers:
-        l_secondary_signals, df_ToRefer = get_single_residue_markers([_initial_top_signal], _fpath_ref_MAF, _fpath_ma)
+        l_condition, df_ToRefer = get_single_residue_markers([_initial_top_signal], _fpath_ref_MAF, _fpath_ma)
     else:
-        l_secondary_signals = [_initial_top_signal] if isinstance(_initial_top_signal, str) else _initial_top_signal
+        l_condition = [_initial_top_signal] if isinstance(_initial_top_signal, str) else _initial_top_signal
+
+
+    ### output variable
+    d_OUT_conditions = {1: l_condition.copy()}
 
 
 
     ##### Main iteration
 
-    for i in range(1, _N_max_iter+1):
+    for i in range(2, _N_max_iter+1):
 
-        print("===[{}]: ROUND_{}.".format(i, i))
-        # print("Current conditions:\n{}".format(l_secondary_signals))
+        print("\n=====[ ROUND {} ]".format(i))
+        print(f"Conditions: {l_condition}")
 
-        snplist_temp = os.path.join(_out_prefix + "{}.snplist".format(i))
+        snplist_temp = _out_prefix + f".ROUND_{i}.snplist"
         out_prefix_temp = re.sub(r'.snplist$', '', snplist_temp)
 
-        sr_snplist = pd.Series(l_secondary_signals, name="snptlist")
+        sr_snplist = pd.Series(l_condition, name="snptlist")
         # display(sr_snplist)
         sr_snplist.to_csv(snplist_temp, header=False, index=False, na_rep="NA")
 
@@ -211,15 +215,15 @@ def iterate_GCTA_COJO(_fpath_ma, _initial_top_signal, _fpath_ref_bfile, _fpath_r
 
                 print(df_PP_cma.head(10))
 
-                ## credible set에 있는 애들 확인.
-                df_PP_cma = df_PP_cma[ df_PP_cma['CredibleSet'] ] # 2개 이상의 rows들일 수 있음.
-
-                l_next_top_signal = df_PP_cma['SNP'].tolist()
+                # df_PP_cma = df_PP_cma[ df_PP_cma['CredibleSet'] ] # credible set에 있는 애들 확인.
+                df_PP_cma = df_PP_cma.iloc[[0], :] # the top만 (2025.07.29.)
+                
+                l_condition_next = df_PP_cma['SNP'].tolist()
                 next_top_signal_pC = \
-                        df_out_sort.loc[ df_out_sort['SNP'].isin(l_next_top_signal) , 'pC'].min()
+                        df_out_sort.loc[ df_out_sort['SNP'].isin(l_condition_next) , 'pC'].min()
 
             else:
-                l_next_top_signal = [df_out_sort['SNP'].iat[0]]
+                l_condition_next = [df_out_sort['SNP'].iat[0]]
                 next_top_signal_pC = df_out_sort['pC'].iat[0]
 
 
@@ -228,15 +232,18 @@ def iterate_GCTA_COJO(_fpath_ma, _initial_top_signal, _fpath_ref_bfile, _fpath_r
 
             if _f_single_factor_markers:
 
-                l_next_top_signal, df_ToRefer = get_single_residue_markers(l_next_top_signal, _fpath_ref_MAF, df_out_sort)
+                l_condition_next, df_ToRefer = get_single_residue_markers(l_condition_next, _fpath_ref_MAF, df_out_sort)
                 print(f"df_ToRefer:\n{df_ToRefer}")
 
 
             ### End 조건: No more significant signals?
             if next_top_signal_pC < 5e-8:
 
-                l_secondary_signals.extend(l_next_top_signal)
-                print("\nNext conditions: ", l_secondary_signals)
+                l_condition.extend(l_condition_next)
+                print("\nNext conditions: ", l_condition)
+
+                d_OUT_conditions[i] = l_condition_next
+
 
             else:
 
@@ -245,7 +252,7 @@ def iterate_GCTA_COJO(_fpath_ma, _initial_top_signal, _fpath_ref_bfile, _fpath_r
 
         # if i >= 2: break
 
-    return l_secondary_signals
+    return l_condition, {f"ROUND_{k}": v for k, v in d_OUT_conditions.items()}
 
 
 

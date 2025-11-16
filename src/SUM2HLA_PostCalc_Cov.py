@@ -434,12 +434,17 @@ def calc_PP(_sr_LL_prior):
 
 
 
-def postprepr_LL(_df_result, _rho=0.95, 
-                 _l_type=('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP')) -> dict:
+def postprepr_LL(_df_result, _rho=0.99, _col_CredibleSet="CredibleSet(99%)",
+                 _l_type=('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP'),
+                 _f_AA_only_positive_pos=True) -> dict:
     
     """
     - mod_PostCal_NcpMean.py에 있는 `postprepr_LL()`함수 거의 그대로 가져옴.
     - cov-model 상황에 맞춰서 조금만 수정함. (완전히 같은 함수는 아님.)
+
+    (2025.09.28.)
+    - rho=0.99로 바꿈.
+
     
     """
     
@@ -473,10 +478,14 @@ def postprepr_LL(_df_result, _rho=0.95,
     """
         
     f_HLA = df_result_sort['SNP'].str.startswith("HLA")
-    f_AA = df_result_sort['SNP'].str.startswith("AA")
     f_intraSNP = df_result_sort['SNP'] \
                     .map(lambda x: re.match(r'^SNP_(\S+)_(\d+)', x)) \
                     .map(lambda x: bool(x))
+    f_AA = None
+    if _f_AA_only_positive_pos:
+        f_AA = df_result_sort['SNP'].map(lambda x: bool(re.match(r"AA_(\w+)_(\d+)_", x)))
+    else:
+        f_AA = df_result_sort['SNP'].str.startswith("AA")
     
     f_HLAtype = f_HLA | f_AA | f_intraSNP
     f_SNP = ~f_HLAtype
@@ -502,7 +511,7 @@ def postprepr_LL(_df_result, _rho=0.95,
     def postprepr_LL_subgroup(_df_LL_Lprior_sort_sub, _rho):
 
         # print("\nSummarizing posterior probabilities.")
-        # display(_df_LL_Lprior_sort)
+        # print(_df_LL_Lprior_sort_sub)
         
         ##### (2) diff (abs)
         l_LL_Lprior = _df_LL_Lprior_sort_sub['LL+Lprior'].tolist()
@@ -557,7 +566,7 @@ def postprepr_LL(_df_result, _rho=0.95,
             return l_CredibleSet
         
         sr_CredibleSet = pd.Series(
-            get_credible_set(sr_PP, _rho), index=sr_PP.index, name='CredibleSet'
+            get_credible_set(sr_PP, _rho), index=sr_PP.index, name=_col_CredibleSet
         )
 
         sr_rank = pd.Series(list(range(_df_LL_Lprior_sort_sub.shape[0])), name='rank', index=_df_LL_Lprior_sort_sub.index)
@@ -575,7 +584,7 @@ def postprepr_LL(_df_result, _rho=0.95,
                 sr_logPP,
             ],axis=1
         ) \
-            .loc[:, ['rank', 'rank_p', 'SNP', 'PP', 'CredibleSet', 'LL+Lprior', 'LL+Lprior_diff', 'LL+Lprior_diff_acc', 'logPP']]
+            .loc[:, ['rank', 'rank_p', 'SNP', 'PP', _col_CredibleSet, 'LL+Lprior', 'LL+Lprior_diff', 'LL+Lprior_diff_acc', 'logPP']]
 
 
         return df_RETURN
@@ -587,8 +596,11 @@ def postprepr_LL(_df_result, _rho=0.95,
 
         # print("\n===[{}]: {}".format(i, _key))
         
-        d_flag_target_group[_key] = \
-            postprepr_LL_subgroup(df_result_sort[_sr_flag], _rho)
+        try:
+            d_flag_target_group[_key] = \
+                postprepr_LL_subgroup(df_result_sort[_sr_flag], _rho)
+        except:
+            d_flag_target_group[_key] = None
 
         # display(d_flag_target_group[_key])
 
