@@ -95,7 +95,8 @@ class SWCA:
                  _module_CMVN="Bayesian", 
                  _f_include_SNPs=False, _f_use_finemapping=True,
                  _r2_pred=0.6, _ncp=5.2, _N_max_iter=5, 
-                 _gcta=None, _plink="/home/wschoi/miniconda3/bin/plink"):
+                 _gcta=None, _plink="/home/wschoi/miniconda3/bin/plink",
+                 _f_use_codingAA_HLA=True):
         
         # logger.info("SWCARunner initialized with pre-loaded DataFrames.")        
         
@@ -146,6 +147,9 @@ class SWCA:
         ##### External software
         self.gcta = _gcta
         self.plink = _plink
+
+
+        self.f_use_codingAA_HLA = _f_use_codingAA_HLA
 
 
 
@@ -216,6 +220,22 @@ class SWCA:
         ##### (1) Summary Imputation
 
         self.df_Z_imputed = mod_SummaryImp.__MAIN__(self.df_sumstats3, self.df_ref_ld, self.df_ref_MAF)
+
+        if self.f_use_codingAA_HLA:
+
+            def mask_codingAA_HLA(_x):    
+                if _x.startswith("AA"):
+                    return bool(re.match(r"AA_(\w+)_(\d+)_", _x))
+                
+                if _x.startswith("HLA"):
+                    return True
+                
+                return False
+            
+            f_codingAA_HLA = self.df_Z_imputed['SNP'].map(lambda x: mask_codingAA_HLA(x))
+            self.df_Z_imputed = self.df_Z_imputed[f_codingAA_HLA]
+
+
         self.df_Z_imputed_r2pred = self.df_Z_imputed[ self.df_Z_imputed['r2_pred'] >= self.r2_pred ]
 
         self.fpath_Z_imputed = self.out_prefix + ".Z_imputed"

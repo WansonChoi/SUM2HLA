@@ -247,17 +247,31 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
             d_curated_input = json.load(f_json)
 
 
+        # self.SWCA_batch = SWCA.SWCA.from_paths(
+        #     _fpath_sumstats3=d_curated_input['whole']['sumstats'], 
+        #     _fpath_ref_ld=d_curated_input['whole']['ld'],
+        #     _fpath_ref_bfile=self.fpath_LD_SNP_HLA, 
+        #     _fpath_ref_MAF=self.fpath_LD_MAF,
+        #     _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'], 
+        #     _out_prefix=self.out_prefix, 
+        #     _N=self.GWAS_summary.N,
+        #     _r2_pred=self.r2_pred, _ncp=self.ncp, _N_max_iter=self.N_max_iter,
+        #     _plink=self.plink)
+
+        ## 이제 codingAA+HLA로 fix시킬거임.
         self.SWCA_batch = SWCA.SWCA.from_paths(
             _fpath_sumstats3=d_curated_input['whole']['sumstats'], 
             _fpath_ref_ld=d_curated_input['whole']['ld'],
             _fpath_ref_bfile=self.fpath_LD_SNP_HLA, 
             _fpath_ref_MAF=self.fpath_LD_MAF,
-            _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['whole'], 
+            _fpath_PP=self.OUT_PIP_PP_fpath[_N_causal]['AA+HLA'], 
             _out_prefix=self.out_prefix, 
             _N=self.GWAS_summary.N,
             _r2_pred=self.r2_pred, _ncp=self.ncp, _N_max_iter=self.N_max_iter,
-            _plink=self.plink)
-        
+            _plink=self.plink,
+            _f_use_codingAA_HLA=True
+        )
+
 
         return self.SWCA_batch.run()
     

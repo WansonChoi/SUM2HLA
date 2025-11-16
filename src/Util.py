@@ -54,6 +54,19 @@ def make_psd(matrix):
     return eigenvectors @ np.diag(eigenvalues) @ eigenvectors.T
 
 
+def make_SUM2HLA_LDmatrix(_df_ld_raw, _df_bim_SNP_HLA):
+
+    df_ld_NoNA = _df_ld_raw.fillna(0.0)
+
+    for i in range(df_ld_NoNA.shape[0]):
+        df_ld_NoNA.loc[i, i] = 1.0 # diagonal은 1.0으로.
+
+
+    df_ld_NoNA_PSD = make_psd(df_ld_NoNA.values)
+    df_ld_NoNA_PSD = pd.DataFrame(df_ld_NoNA_PSD, columns=_df_bim_SNP_HLA.iloc[:, 1], index=_df_bim_SNP_HLA.iloc[:, 1])
+
+    return df_ld_NoNA_PSD
+
 
 def is_psd(matrix):
     """
@@ -69,6 +82,43 @@ def is_psd(matrix):
     except np.linalg.LinAlgError:
         return False
 
+
+
+
+
+def get_N_of_ss(_ss):
+
+    """
+    return sample size ('N' column in the header) of the GWAS summary
+    """
+
+    df_ss_temp = pd.read_csv(_ss, sep=r'\s+', header=0, nrows=5)
+
+    N_sample_size = df_ss_temp['N'].iat[0]
+
+    """
+    (cf) 맨 처음 argument check할 때 'N'이 column이 없으면 죽도록 만들었음. 안심하고 저렇게 쓰면 됨.
+    """
+
+
+    return N_sample_size
+
+
+
+def mask_codingAA_and_HLA(_x):
+    
+    if _x.startswith("AA"):
+        return bool(re.match(r"AA_(\w+)_(\d+)_", _x))
+    
+    if _x.startswith("HLA"):
+        return True
+    
+    return False
+
+
+
+
+##### 이하 deprecated.
 
 
 def split_summary(_df_ss, _col_BP='BP') -> dict:
@@ -179,21 +229,3 @@ def calc_concordance(_fPath_WTCCC_signals, _fPath_PP, _type_PP="whole",
     
     return d_df_count_and_prop, df_RETURN
 
-
-
-def get_N_of_ss(_ss):
-
-    """
-    return sample size ('N' column in the header) of the GWAS summary
-    """
-
-    df_ss_temp = pd.read_csv(_ss, sep=r'\s+', header=0, nrows=5)
-
-    N_sample_size = df_ss_temp['N'].iat[0]
-
-    """
-    (cf) 맨 처음 argument check할 때 'N'이 column이 없으면 죽도록 만들었음. 안심하고 저렇게 쓰면 됨.
-    """
-
-
-    return N_sample_size
