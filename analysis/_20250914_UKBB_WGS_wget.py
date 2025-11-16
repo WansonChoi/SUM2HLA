@@ -46,7 +46,10 @@ def make_outdir(_df, _fpath_out_dir=None):
     ## 예상 out_dir이름: "UKBB_WGS_{efoTraits}_{Ethnicity}_{accessionId}"
     l_ToExtract = ["efoTraits", "Ethnicity", "accessionId"]
 
-    sr_efoTraits2 = _df['efoTraits'].str.replace(" ", "_").rename("efoTraits2")
+    sr_efoTraits2 = _df['efoTraits'] \
+                        .str.replace("(", "") \
+                        .str.replace(")", "") \
+                        .str.replace(" ", "_").rename("efoTraits2")
 
     def map_Ethnicity(_x):
 
@@ -85,7 +88,7 @@ def make_wget_CMD(_df, _out):
     df_temp = pd.concat([df_temp, sr_ftp, sr_out_dir], axis=1)
 
     CMD = \
-        "wget -r -nH --cut-dirs=6 --no-parent --reject index.html* \\\n" + \
+        "wget -c -r -nH --cut-dirs=6 --no-parent --reject index.html* \\\n" + \
             '\t--exclude-directories={exclude_dir} \\\n' + \
             "\t{ftp} \\\n" + \
             "\t-P {out_dir}"
