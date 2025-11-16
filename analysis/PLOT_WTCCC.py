@@ -82,7 +82,7 @@ class plot_Figure_WTCCC():
 
 
 
-    def run_v2(self): # 얘가 Main임.
+    def run(self):
 
         _color_round2 = "#86c66c"
 
@@ -92,22 +92,30 @@ class plot_Figure_WTCCC():
         # ─────────────────────────────────────────
         # SubFigure a: (라벨 'a') → [Round1(1×2), Round2(1×2)]
         # ─────────────────────────────────────────
-        subfig_a.text(-0.02, 1.02, "a", fontsize=16, fontweight="bold",
+        subfig_a.text(-0.02, 1.05, "a", fontsize=16, fontweight="bold",
                     transform=subfig_a.transSubfigure, ha="right", va="bottom")
+
+        subfig_a.suptitle("Rheumatoid arthritis", fontsize=14, y=1.07)
+        subfig_a.text(0.5, 1.01, "Round 1", ha="center", va="top", fontsize=12)
 
         # a를 다시 2×1로 쪼개서 "round1"과 "round2" 구역을 만든다
         axes_a = subfig_a.subplots(2, 2)
+        # subfig_a.subplots_adjust(hspace=10.0)  # 두 행 사이 간격 키움 (이게 constrained_layout때문에 안되는듯.)
         print(axes_a)
 
         # Round 1: 1×2
-        axes_a[0, 0].set_title("Rheumatoid arthritis / Round 1", x = 1.12, y=1.15, fontsize=12)  # ← 이 두 패널 묶음의 중앙 상단 제목
+        # axes_a[0, 0].set_title("Rheumatoid arthritis / Round 1", x = 1.12, y=1.15, fontsize=16)  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_a[0, 0].set_title("Summary", fontsize=14, y=1.15, weight="bold")  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_a[0, 1].set_title("Genotype", fontsize=14, y=1.15, weight="bold")  # ← 이 두 패널 묶음의 중앙 상단 제목
 
         x_top_RA_PP_round1, y_top_RA_PP_round1 = self.plotter_RA_PP_Round1.plot_HLA_manhattan_PP(axes_a[0, 0])
         x_top_RA_Pval_round1, y_top_RA_Pval_round1 = self.plotter_RA_Pval_Round1.plot_HLA_manhattan_Pvalue(axes_a[0, 1])
 
 
         # Round 2: 1×2 + 중앙 상단 제목(suptitle)
-        axes_a[1, 0].set_title("Round 2", x = 1.12, y=1.1, fontsize=12)  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_a[1, 0].set_title(" ", x = 1.05, y=1.08, fontsize=12)  # 걍 공간 확보용.
+        subfig_a.text(0.5, 0.48, "Round 2", ha="center", va="top", fontsize=12)
+        # axes_a[1, 1].set_title("Round 1", x = 0.0, y=1.5, fontsize=12)  # 이걸로 절대 안됨.
 
         x_top_RA_PP_round2, y_top_RA_PP_round2 = self.plotter_RA_PP_Round2.plot_HLA_manhattan_PP(axes_a[1, 0], _color_top=_color_round2)
         x_top_RA_Pval_round2, y_top_RA_Pval_round2 = self.plotter_RA_Pval_Round2.plot_HLA_manhattan_Pvalue(axes_a[1, 1], _color_top=_color_round2)
@@ -122,45 +130,44 @@ class plot_Figure_WTCCC():
         ##### RA_2012의 x-labels 위치 좀만 이동. (+4/72만큼 이동해놓은거에서, 중첩해서 다시 +4/72만큼 이동.)
         import matplotlib.transforms as mtransforms
 
-        for _col_idx in [0, 1]:
 
-            _ax = axes_a[0, _col_idx]
+        for _row_idx in [0, 1]:
+
+            _ax = axes_a[_row_idx, 0]
             
             for label in _ax.get_xticklabels(which="major"):
 
                 label_text = label.get_text()
 
-                if label_text == "DPB1" and _col_idx == 0:
-                    offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
+                if label_text == "DPA1":
+                    offset = mtransforms.ScaledTranslation(+1/72, 0, _ax.figure.dpi_scale_trans)
                     label.set_transform(label.get_transform() + offset)
 
-                if label_text == "DPB1" and _col_idx == 1:
-                    offset = mtransforms.ScaledTranslation(+4/72, 0, _ax.figure.dpi_scale_trans)
+                if label_text == "DPB1":
+                    offset = mtransforms.ScaledTranslation(+1/72, 0, _ax.figure.dpi_scale_trans)
                     label.set_transform(label.get_transform() + offset)
 
 
-        for _col_idx in [0, 1]:
 
-            _ax = axes_a[1, _col_idx]
+        for _row_idx in [0, 1]:
+
+            _ax = axes_a[_row_idx, 1]
             
             for label in _ax.get_xticklabels(which="major"):
 
                 label_text = label.get_text()
 
-                if label_text == "DPB1" and _col_idx == 0:
+                if label_text == "DPB1":
                     offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
                     label.set_transform(label.get_transform() + offset)
 
-                if label_text == "DPB1" and _col_idx == 1:
-                    offset = mtransforms.ScaledTranslation(+4/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
 
 
         ##### Round 1 top의 label
         ax = axes_a[0, 0]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
 
         txt = ax.text(
-            0.38, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.40, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
             # "Amino acid pos. 11 and 13\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
             "Amino acid pos. 11 and 13\n" + r"in HLA-DRB1",  # 원하는 라벨
             transform=ax.transAxes,              # ← 축 분수 좌표!
@@ -171,10 +178,10 @@ class plot_Figure_WTCCC():
         txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
 
 
-        ax = axes_a[0, 1]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
+        ax = axes_a[0, 1]  # RA / Round1 / P-value 패널
 
         txt = ax.text(
-            0.38, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.39, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
             # "Amino acid pos. 11 and 13\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
             "Amino acid pos. 11 and 13\n" + r"in HLA-DRB1",  # 원하는 라벨
             transform=ax.transAxes,              # ← 축 분수 좌표!
@@ -191,7 +198,7 @@ class plot_Figure_WTCCC():
         ax = axes_a[1, 0]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
 
         txt = ax.text(
-            0.33, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.32, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
             # "Amino acid pos. 71 with K\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
             "Amino acid pos. 71 with K\n" + r"in HLA-DRB1",  # 원하는 라벨
             transform=ax.transAxes,              # ← 축 분수 좌표!
@@ -206,7 +213,7 @@ class plot_Figure_WTCCC():
         ax = axes_a[1, 1]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
 
         txt = ax.text(
-            0.32, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.30, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
             # "Amino acid pos. 71 with K\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
             "Amino acid pos. 71 with K\n" + r"in HLA-DRB1",  # 원하는 라벨
             transform=ax.transAxes,              # ← 축 분수 좌표!
@@ -240,7 +247,8 @@ class plot_Figure_WTCCC():
         txt = _ax.text(
             x_text, y_text,
             # "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DR$\beta$1",
-            "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DRB1",
+            # "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DRB1",  # 이제 그냥 다 정자체로 뽑고 inkscape 가져가서 italic넣을거임.
+            "control for\n" + "Amino acid pos. 13 with HF\n" + r"in HLA-DRB1",  # 이제 그냥 다 정자체로 뽑고 inkscape 가져가서 italic넣을거임.
             ha="center", va="bottom", fontsize=10, zorder=5,
         )
         # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
@@ -274,7 +282,8 @@ class plot_Figure_WTCCC():
         txt = _ax.text(
             x_text, y_text,
             # "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DR$\beta$1",
-            "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DRB1",
+            # "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DRB1", # 이제 그냥 다 정자체로 뽑고 inkscape 가져가서 italic넣을거임.
+            "control for\n" + "Amino acid pos. 13 with HF\n" + r"in HLA-DRB1",  
             ha="center", va="bottom", fontsize=10, zorder=5,
         )
         # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
@@ -294,8 +303,12 @@ class plot_Figure_WTCCC():
         # ─────────────────────────────────────────
         # SubFigure b: (라벨 'b') → 2×2
         # ─────────────────────────────────────────
-        subfig_b.text(-0.02, 1.02, "b", fontsize=16, fontweight="bold",
+        subfig_b.text(-0.02, 1.05, "b", fontsize=16, fontweight="bold",
                     transform=subfig_b.transSubfigure, ha="right", va="bottom")
+
+        subfig_b.suptitle("Type 1 diabetes", fontsize=14, y=1.07)
+        subfig_b.text(0.5, 1.01, "Round 1", ha="center", va="top", fontsize=12)
+
 
 
         # a를 다시 2×1로 쪼개서 "round1"과 "round2" 구역을 만든다
@@ -303,14 +316,21 @@ class plot_Figure_WTCCC():
         print(axes_b)
 
         # Round 1: 1×2
-        axes_b[0, 0].set_title("Type 1 diabetes / Round 1", x = 1.12, y=1.15, fontsize=12)  # ← 이 두 패널 묶음의 중앙 상단 제목
+        # axes_b[0, 0].set_title("Type 1 diabetes / Round 1", x = 1.12, y=1.15, fontsize=16)  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_b[0, 0].set_title("Summary", fontsize=14, y=1.2, weight="bold")  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_b[0, 1].set_title("Genotype", fontsize=14, y=1.2, weight="bold")  # ← 이 두 패널 묶음의 중앙 상단 제목
+
+
+
 
         x_top_T1D_PP_round1, y_top_T1D_PP_round1 = self.plotter_T1D_PP_Round1.plot_HLA_manhattan_PP(axes_b[0, 0])
         x_top_T1D_Pval_round1, y_top_T1D_Pval_round1 = self.plotter_T1D_Pval_Round1.plot_HLA_manhattan_Pvalue(axes_b[0, 1])
 
 
         # Round 2: 1×2 + 중앙 상단 제목(suptitle)
-        axes_b[1, 0].set_title("Round 2", x = 1.12, y=1.1, fontsize=12)  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_b[1, 0].set_title(" ", x = 1.05, y=1.08, fontsize=12)  # 걍 공간확보용
+        subfig_b.text(0.5, 0.48, "Round 2", ha="center", va="top", fontsize=12)
+        # axes_b[1, 0].set_title("Round 2", x = 1.08, y=1.08, fontsize=12)  # ← 이 두 패널 묶음의 중앙 상단 제목
 
         self.plotter_T1D_PP_Round2.plot_HLA_manhattan_PP(axes_b[1, 0], _color_top=_color_round2)
         self.plotter_T1D_Pval_Round2.plot_HLA_manhattan_Pvalue(axes_b[1, 1], _color_top=_color_round2)
@@ -322,37 +342,34 @@ class plot_Figure_WTCCC():
 
 
 
-        for _col_idx in [0, 1]:
+        for _row_idx in [0, 1]:
 
-            _ax = axes_b[0, _col_idx]
+            _ax = axes_b[_row_idx, 0]
             
             for label in _ax.get_xticklabels(which="major"):
 
                 label_text = label.get_text()
 
-                if label_text == "DPB1" and _col_idx == 0:
-                    offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
+                if label_text == "DPA1":
+                    offset = mtransforms.ScaledTranslation(+1/72, 0, _ax.figure.dpi_scale_trans)
                     label.set_transform(label.get_transform() + offset)
 
-                if label_text == "DPB1" and _col_idx == 1:
-                    offset = mtransforms.ScaledTranslation(+4/72, 0, _ax.figure.dpi_scale_trans)
+                if label_text == "DPB1":
+                    offset = mtransforms.ScaledTranslation(+1/72, 0, _ax.figure.dpi_scale_trans)
                     label.set_transform(label.get_transform() + offset)
 
 
-        for _col_idx in [0, 1]:
 
-            _ax = axes_b[1, _col_idx]
+        for _row_idx in [0, 1]:
+
+            _ax = axes_b[_row_idx, 1]
             
             for label in _ax.get_xticklabels(which="major"):
 
                 label_text = label.get_text()
 
-                if label_text == "DPB1" and _col_idx == 0:
+                if label_text == "DPB1":
                     offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-                if label_text == "DPB1" and _col_idx == 1:
-                    offset = mtransforms.ScaledTranslation(+4/72, 0, _ax.figure.dpi_scale_trans)
                     label.set_transform(label.get_transform() + offset)
 
 
@@ -362,7 +379,7 @@ class plot_Figure_WTCCC():
         ax = axes_b[0, 0]  # T1D / Round1
 
         txt = ax.text(
-            0.53, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.55, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
             # "Amino acid pos. 57 with D\n" + r"in HLA-DQ$\beta$1",  # 원하는 라벨
             "Amino acid pos. 57 with D\n" + r"in HLA-DQB1",  # 원하는 라벨
             transform=ax.transAxes,              # ← 축 분수 좌표!
@@ -377,9 +394,10 @@ class plot_Figure_WTCCC():
         ax = axes_b[0, 1]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
 
         txt = ax.text(
-            0.60, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.47, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
             # "Amino acid pos. 57\n" + r"in HLA-DQ$\beta$1",  # 원하는 라벨
-            "Amino acid pos. 57\n" + r"in HLA-DQB1",  # 원하는 라벨
+            # "Amino acid pos. 57\n" + r"in HLA-DQB1",  # 원하는 라벨
+            "Amino acid pos. 57 with A, AS, AV, D\n" + r"in HLA-DQB1",  # 원하는 라벨
             transform=ax.transAxes,              # ← 축 분수 좌표!
             ha="center", va="top",
             fontsize=10, linespacing=1.1,
@@ -394,7 +412,7 @@ class plot_Figure_WTCCC():
         ax = axes_b[1, 0]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
 
         txt = ax.text(
-            0.45, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.47, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
             # "Amino acid pos. 52 with R\n" + r"in HLA-DQ$\alpha$1" + "\n(r=-1.0)",  # 원하는 라벨
             # "Amino acid pos. 52 with R\n" + r"in HLA-DQ$\alpha$1",
             "Amino acid pos. 52 with R\n" + r"in HLA-DQA1",
@@ -409,9 +427,10 @@ class plot_Figure_WTCCC():
         ax = axes_b[1, 1]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
 
         txt = ax.text(
-            0.43, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.46, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
             # "Amino acid pos. 52 with R\nand 47 with RK\n" + r"in HLA-DQ$\alpha$1",  # 원하는 라벨
-            "Amino acid pos. 52 with R\nand 47 with RK\n" + r"in HLA-DQA1",  # 원하는 라벨
+            # "Amino acid pos. 52 with R\nand 47 with RK\n" + r"in HLA-DQA1",  # 원하는 라벨
+            "Amino acid pos. 52 with R\n" + r"in HLA-DQA1",  # 원하는 라벨
             transform=ax.transAxes,              # ← 축 분수 좌표!
             ha="center", va="top",
             fontsize=10, linespacing=1.1,
@@ -496,465 +515,6 @@ class plot_Figure_WTCCC():
 
         return fig
 
-
-
-
-
-    def run(self):
-
-        _color_round2 = "#86c66c"
-
-        fig = plt.figure(figsize=self.figsize, dpi=self.dpi, constrained_layout=True)
-        subfig_a, subfig_b = fig.subfigures(2, 1, hspace=0.12)  # ← a/b 사이 공간
-
-        # ─────────────────────────────────────────
-        # SubFigure a: (라벨 'a') → [Round1(1×2), Round2(1×2)]
-        # ─────────────────────────────────────────
-        subfig_a.text(-0.02, 1.02, "a", fontsize=16, fontweight="bold",
-                    transform=subfig_a.transSubfigure, ha="right", va="bottom")
-
-        # a를 다시 2×1로 쪼개서 "round1"과 "round2" 구역을 만든다
-        sf_a_r1, sf_a_r2 = subfig_a.subfigures(2, 1, hspace=0.1)
-
-        # Round 1: 1×2
-        sf_a_r1.suptitle("Rheumatoid arthritis / Round 1", y=1.15, fontsize=14)  # ← 이 두 패널 묶음의 중앙 상단 제목
-        axs_a_r1 = sf_a_r1.subplots(1, 2)  # [ax11, ax12]
-
-        # (예시 플롯)
-        # for ax in axs_a_r1:
-        #     x = np.linspace(0, 1, 100); ax.plot(x, np.sin(6*np.pi*x))
-        #     ax.set_title("Round 1 panel")
-
-        x_top_RA_PP_round1, y_top_RA_PP_round1 = self.plotter_RA_PP_Round1.plot_HLA_manhattan_PP(axs_a_r1[0])
-        x_top_RA_Pval_round1, y_top_RA_Pval_round1 = self.plotter_RA_Pval_Round1.plot_HLA_manhattan_Pvalue(axs_a_r1[1])
-
-
-        # Round 2: 1×2 + 중앙 상단 제목(suptitle)
-        axs_a_r2 = sf_a_r2.subplots(1, 2)  # [ax21, ax22]
-        sf_a_r2.suptitle("Round 2", y=1.1, fontsize=14)  # ← 이 두 패널 묶음의 중앙 상단 제목
-
-        x_top_RA_PP_round2, y_top_RA_PP_round2 = self.plotter_RA_PP_Round2.plot_HLA_manhattan_PP(axs_a_r2[0], _color_top=_color_round2)
-        x_top_RA_Pval_round2, y_top_RA_Pval_round2 = self.plotter_RA_Pval_Round2.plot_HLA_manhattan_Pvalue(axs_a_r2[1], _color_top=_color_round2)
-
-
-        ##### x-label한번만 보이도록
-        axs_a_r1[0].set_xlabel("")
-        axs_a_r1[1].set_xlabel("")
-
-        ##### RA_2012의 x-labels 위치 좀만 이동. (+4/72만큼 이동해놓은거에서, 중첩해서 다시 +4/72만큼 이동.)
-        import matplotlib.transforms as mtransforms
-
-        for _col_idx in [0, 1]:
-
-            _ax = axs_a_r1[_col_idx]
-            
-            for label in _ax.get_xticklabels(which="major"):
-
-                label_text = label.get_text()
-
-                if label_text == "DPB1" and _col_idx == 0:
-                    offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-                if label_text == "DPB1" and _col_idx == 1:
-                    offset = mtransforms.ScaledTranslation(+4/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-        for _col_idx in [0, 1]:
-
-            _ax = axs_a_r2[_col_idx]
-            
-            for label in _ax.get_xticklabels(which="major"):
-
-                label_text = label.get_text()
-
-                if label_text == "DPB1" and _col_idx == 0:
-                    offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-                if label_text == "DPB1" and _col_idx == 1:
-                    offset = mtransforms.ScaledTranslation(+4/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-
-        ##### Round 1 top의 label
-        ax = axs_a_r1[0]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
-
-        txt = ax.text(
-            0.42, 1.05,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
-            "Amino acid pos. 11 and 13\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
-            transform=ax.transAxes,              # ← 축 분수 좌표!
-            ha="center", va="top",
-            fontsize=10, linespacing=1.1,
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
-        )
-        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
-
-
-        ax = axs_a_r1[1]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
-
-        txt = ax.text(
-            0.42, 1.05,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
-            "Amino acid pos. 11 and 13\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
-            transform=ax.transAxes,              # ← 축 분수 좌표!
-            ha="center", va="top",
-            fontsize=10, linespacing=1.1,
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
-        )
-        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
-
-
-
-        ##### Round 2 top의 label
-        ax = axs_a_r2[0]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
-
-        txt = ax.text(
-            0.35, 1.05,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
-            "Amino acid pos. 71 with K\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
-            transform=ax.transAxes,              # ← 축 분수 좌표!
-            ha="center", va="top",
-            fontsize=10, linespacing=1.1,
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
-        )
-        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
-
-
-        ax = axs_a_r2[1]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
-
-        txt = ax.text(
-            0.35, 1.05,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
-            "Amino acid pos. 71 with K\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
-            transform=ax.transAxes,              # ← 축 분수 좌표!
-            ha="center", va="top",
-            fontsize=10, linespacing=1.1,
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
-        )
-        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
-
-
-
-        ##### Conditioning mark
-
-
-        _ax = axs_a_r2[0]
-        mx = float(np.mean(x_top_RA_PP_round1))
-        # my = float(np.mean(y_top_2022_round1))
-
-        # 라벨을 화살표 위쪽에 두기 위해 y방향으로 살짝 올린 시작점
-        y0, y1 = _ax.get_ylim()
-        dy = 0.08 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절
-        my = 0.1 * (y1 - y0)
-
-        x0, x1 = _ax.get_xlim()
-        dx = 0.08 * (x1 - x0)
-
-        # (1) 텍스트: 왼쪽으로 이동
-        x_text = mx
-        y_text = my + dy          # 머리 위에 위치
-        txt = _ax.text(
-            x_text, y_text,
-            "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DR$\beta$1",
-            ha="center", va="bottom", fontsize=10, zorder=5,
-        )
-        # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
-        txt.set_in_layout(False)
-
-
-        _head = _ax.scatter(
-            [mx], [my],
-            marker='v',           # 아래로 향한 삼각형
-            s=32,                 # 크기
-            color='#d62728',
-            zorder=6, clip_on=False
-        )
-
-
-        # 텍스트와 화살표를 한 번에 annotate
-        # _ax.annotate(
-        #     "control for\n" + "Amino acid pos. 11 and 13\n" + r"in HLA-DR$\beta$1",
-        #     xy=(mx, my),               # 화살표 머리(끝점): 평균 좌표
-        #     xytext=(mx, my + dy),      # 화살표 시작점(텍스트 위치): 위쪽
-        #     ha="center", va="bottom",
-        #     fontsize=11,
-        #     arrowprops=dict(
-        #         # 삼각형(정삼각형에 가까운) 헤드
-        #         arrowstyle="Simple,head_length=6,head_width=6,tail_width=1.2",
-        #         # 선 모양을 직선으로
-        #         connectionstyle="arc3",
-        #         shrinkA=0, shrinkB=0,
-        #         mutation_scale=1.0,   # 필요시 전체 스케일 조절(예: 1.2, 1.5 등)
-        #         color='#d62728'
-        #     ),
-        # )
-
-        _ax = axs_a_r2[1]
-        mx = float(np.mean(x_top_RA_Pval_round1))
-        # my = float(np.mean(y_top_2022_round1))
-
-        # 라벨을 화살표 위쪽에 두기 위해 y방향으로 살짝 올린 시작점
-        y0, y1 = _ax.get_ylim()
-        dy = 0.08 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절
-        my = 0.1 * (y1 - y0)
-
-        x0, x1 = _ax.get_xlim()
-        dx = 0.08 * (x1 - x0)
-
-        # (1) 텍스트: 왼쪽으로 이동
-        x_text = mx
-        y_text = my + dy          # 머리 위에 위치
-        txt = _ax.text(
-            x_text, y_text,
-            "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DR$\beta$1",
-            ha="center", va="bottom", fontsize=10, zorder=5,
-        )
-        # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
-        txt.set_in_layout(False)
-
-
-        _head = _ax.scatter(
-            [mx], [my],
-            marker='v',           # 아래로 향한 삼각형
-            s=32,                 # 크기
-            color='#d62728',
-            zorder=6, clip_on=False
-        )
-
-
-
-        # 텍스트와 화살표를 한 번에 annotate
-        # _ax.annotate(
-        #     "control for\n" + "Amino acid pos. 11 and 13\n" + r"in HLA-DR$\beta$1",
-        #     xy=(mx, my),               # 화살표 머리(끝점): 평균 좌표
-        #     xytext=(mx, my + dy),      # 화살표 시작점(텍스트 위치): 위쪽
-        #     ha="center", va="bottom",
-        #     fontsize=11,
-        #     arrowprops=dict(
-        #         # 삼각형(정삼각형에 가까운) 헤드
-        #         arrowstyle="Simple,head_length=6,head_width=6,tail_width=1.2",
-        #         # 선 모양을 직선으로
-        #         connectionstyle="arc3",
-        #         shrinkA=0, shrinkB=0,
-        #         mutation_scale=1.0,   # 필요시 전체 스케일 조절(예: 1.2, 1.5 등)
-        #         color='#d62728'
-        #     ),
-        # )
-
-
-
-
-
-        # ─────────────────────────────────────────
-        # SubFigure b: (라벨 'b') → 2×2
-        # ─────────────────────────────────────────
-        subfig_b.text(-0.02, 1.02, "b", fontsize=16, fontweight="bold",
-                    transform=subfig_b.transSubfigure, ha="right", va="bottom")
-
-
-        # a를 다시 2×1로 쪼개서 "round1"과 "round2" 구역을 만든다
-        sf_b_r1, sf_b_r2 = subfig_b.subfigures(2, 1, hspace=0.1)
-
-        # Round 1: 1×2
-        sf_b_r1.suptitle("Type 1 diabetes / Round 1", y=1.15, fontsize=14)  # ← 이 두 패널 묶음의 중앙 상단 제목
-        axs_b_r1 = sf_b_r1.subplots(1, 2)  # [ax11, ax12]
-
-
-        x_top_T1D_PP_round1, y_top_T1D_PP_round1 = self.plotter_T1D_PP_Round1.plot_HLA_manhattan_PP(axs_b_r1[0])
-        x_top_T1D_Pval_round1, y_top_T1D_Pval_round1 = self.plotter_T1D_Pval_Round1.plot_HLA_manhattan_Pvalue(axs_b_r1[1])
-
-        # Round 2: 1×2 + 중앙 상단 제목(suptitle)
-        sf_b_r2.suptitle("Round 2", y=1.1, fontsize=14)  # ← 이 두 패널 묶음의 중앙 상단 제목
-        axs_b_r2 = sf_b_r2.subplots(1, 2)  # [ax21, ax22]
-
-        self.plotter_T1D_PP_Round2.plot_HLA_manhattan_PP(axs_b_r2[0], _color_top=_color_round2)
-        self.plotter_T1D_Pval_Round2.plot_HLA_manhattan_Pvalue(axs_b_r2[1], _color_top=_color_round2)
-
-
-        ##### 이하 후처리
-
-        ## x-label한번만 보이도록
-        axs_b_r1[0].set_xlabel("")
-        axs_b_r1[1].set_xlabel("")
-
-
-        for _col_idx in [0, 1]:
-
-            _ax = axs_b_r1[_col_idx]
-            
-            for label in _ax.get_xticklabels(which="major"):
-
-                label_text = label.get_text()
-
-                if label_text == "DPB1" and _col_idx == 0:
-                    offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-                if label_text == "DPB1" and _col_idx == 1:
-                    offset = mtransforms.ScaledTranslation(+4/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-        for _col_idx in [0, 1]:
-
-            _ax = axs_b_r2[_col_idx]
-            
-            for label in _ax.get_xticklabels(which="major"):
-
-                label_text = label.get_text()
-
-                if label_text == "DPB1" and _col_idx == 0:
-                    offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-                if label_text == "DPB1" and _col_idx == 1:
-                    offset = mtransforms.ScaledTranslation(+4/72, 0, _ax.figure.dpi_scale_trans)
-                    label.set_transform(label.get_transform() + offset)
-
-
-
-
-        ##### Round 1 top의 label
-        ax = axs_b_r1[0]  # T1D / Round1
-
-        txt = ax.text(
-            0.6, 1.05,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
-            "Amino acid pos. 57\n" + r"in HLA-DQ$\beta$1",  # 원하는 라벨
-            transform=ax.transAxes,              # ← 축 분수 좌표!
-            ha="center", va="top",
-            fontsize=10, linespacing=1.1,
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
-        )
-        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
-
-
-        ax = axs_b_r1[1]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
-
-        txt = ax.text(
-            0.6, 1.05,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
-            "Amino acid pos. 57\n" + r"in HLA-DQ$\beta$1",  # 원하는 라벨
-            transform=ax.transAxes,              # ← 축 분수 좌표!
-            ha="center", va="top",
-            fontsize=10, linespacing=1.1,
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
-        )
-        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
-
-
-
-        ##### Round 2 top의 label
-        ax = axs_b_r2[0]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
-
-        txt = ax.text(
-            0.45, 1.05,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
-            "Amino acid pos. 52 with R\n" + r"in HLA-DQ$\alpha$1",  # 원하는 라벨
-            transform=ax.transAxes,              # ← 축 분수 좌표!
-            ha="center", va="top",
-            fontsize=10, linespacing=1.1,
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
-        )
-        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
-
-
-        ax = axs_b_r2[1]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
-
-        txt = ax.text(
-            0.45, 1.05,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
-            "Amino acid pos. 52 with R\nand 47 with RK\n" + r"in HLA-DQ$\alpha$1",  # 원하는 라벨
-            transform=ax.transAxes,              # ← 축 분수 좌표!
-            ha="center", va="top",
-            fontsize=10, linespacing=1.1,
-            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
-        )
-        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
-
-
-
-
-
-        ##### Conditioning mark
-
-        _ax = axs_b_r2[0]
-        mx = float(np.mean(x_top_T1D_PP_round1))
-        # my = float(np.mean(y_top_2022_round1))
-
-        # 라벨을 화살표 위쪽에 두기 위해 y방향으로 살짝 올린 시작점
-        y0, y1 = _ax.get_ylim()
-        dy = 0.08 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절
-        my = 0.1 * (y1 - y0)
-
-        x0, x1 = _ax.get_xlim()
-        dx = 0.08 * (x1 - x0)
-
-        # (1) 텍스트: 왼쪽으로 이동
-        x_text = mx - dx          # 원하는 만큼 왼쪽
-        y_text = my + dy          # 머리 위에 위치
-        txt = _ax.text(
-            x_text, y_text,
-            "control for\n" + "Amino acid pos. 57 with D\n" + r"in HLA-DQ$\beta$1",
-            ha="center", va="bottom", fontsize=10, zorder=5,
-        )
-        # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
-        txt.set_in_layout(False)
-
-
-        _head = _ax.scatter(
-            [mx], [my],
-            marker='v',           # 아래로 향한 삼각형
-            s=32,                 # 크기
-            color='#d62728',
-            zorder=6, clip_on=False
-        )
-
-
-
-        _ax = axs_b_r2[1]
-        mx = float(np.mean(x_top_T1D_Pval_round1))
-        # my = float(np.mean(y_top_2022_round1))
-
-        # 라벨을 화살표 위쪽에 두기 위해 y방향으로 살짝 올린 시작점
-        y0, y1 = _ax.get_ylim()
-        dy = 0.08 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절
-        my = 0.1 * (y1 - y0)
-
-        x0, x1 = _ax.get_xlim()
-        dx = 0.08 * (x1 - x0)
-
-        x_text = mx - dx        # 원하는 만큼 왼쪽
-        y_text = my + dy          # 머리 위에 위치
-        txt = _ax.text(
-            x_text, y_text,
-            "control for\n" + "Amino acid pos. 57 with D\n" + r"in HLA-DQ$\beta$1",
-            ha="center", va="bottom", fontsize=10, zorder=5,
-        )
-        # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
-        txt.set_in_layout(False)
-
-
-        _head = _ax.scatter(
-            [mx], [my],
-            marker='v',           # 아래로 향한 삼각형
-            s=32,                 # 크기
-            color='#d62728',
-            zorder=6, clip_on=False
-        )
-
-
-        return fig, (axs_a_r1, axs_a_r2, axs_b_r1, axs_b_r2)        
-
-
-        # # b는 2×2 grid
-        # gs_b = subfig_b.add_gridspec(2, 2, hspace=0.25, wspace=0.25)
-        # axs_b = np.array([
-        #     [subfig_b.add_subplot(gs_b[0, 0]), subfig_b.add_subplot(gs_b[0, 1])],
-        #     [subfig_b.add_subplot(gs_b[1, 0]), subfig_b.add_subplot(gs_b[1, 1])]
-        # ])
-        # # (예시 플롯)
-        # for row in axs_b:
-        #     for ax in row:
-        #         x = np.linspace(0, 1, 100); ax.scatter(x, x + 0.1*np.random.randn(100), s=8)
-        #         ax.set_title("T1D panel")
-
-        # 필요하면 개별 축 비율 고정
-        # for ax in axs_a_r1 + axs_a_r2 + axs_b.ravel().tolist():
-        #     ax.set_box_aspect(1.0)  # 정사각
 
 
 

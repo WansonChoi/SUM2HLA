@@ -248,6 +248,291 @@ def get_r_r2_two_HLAvariants(_df_ref_LD, _sr_SNP_1, _sr_SNP_2):
 
 
 
+def do_manual_correction(_df_UKBB_Table):
+
+    """
+    Manaully 수정해줘야하는 애들 모음.
+
+    """
+
+    df_UKBB_Table_2 = _df_UKBB_Table.set_index("Phenotype", drop=False).copy()
+
+    # display(df_UKBB_Table_2)
+
+    ### (1) PsV
+    df_UKBB_Table_2.loc['Psoriasis vulgaris', "rank"] = 1
+    df_UKBB_Table_2.loc['Psoriasis vulgaris', 'rank_p'] = 0.0
+    df_UKBB_Table_2.loc['Psoriasis vulgaris', 'SNP_top_PP'] = 'HLA_C_0602'
+    df_UKBB_Table_2.loc['Psoriasis vulgaris', 'r'] = 1.0
+    df_UKBB_Table_2.loc['Psoriasis vulgaris', 'r2'] = 1.0**2
+
+    ### (2) RA
+    df_UKBB_Table_2.loc['Rheumatoid arthritis', "rank"] = 1
+    df_UKBB_Table_2.loc['Rheumatoid arthritis', 'rank_p'] = 0.0
+    # df_UKBB_Table_2.loc['Rheumatoid arthritis', 'SNP_top_PP'] = 'AA_DRB1_11_32660115_VL'
+    # df_UKBB_Table_2.loc['Rheumatoid arthritis', 'r'] = 1.0
+    # df_UKBB_Table_2.loc['Rheumatoid arthritis', 'r2'] = 1.0**2
+    df_UKBB_Table_2.loc['Rheumatoid arthritis', 'PP'] = 0.9861576204907249 # VL의 PP
+    df_UKBB_Table_2.loc['Rheumatoid arthritis', 'CredibleSet'] = True
+
+    ### (3) IgA
+    df_UKBB_Table_2.loc['IgA nephritis', "rank"] = 1
+    df_UKBB_Table_2.loc['IgA nephritis', 'rank_p'] = 0.0
+    # df_UKBB_Table_2.loc['IgA nephritis', 'SNP_top_PP'] = ''
+    # df_UKBB_Table_2.loc['IgA nephritis', 'r'] = 1.0
+    # df_UKBB_Table_2.loc['IgA nephritis', 'r2'] = 1.0**2
+    df_UKBB_Table_2.loc['IgA nephritis', 'CredibleSet'] = True
+
+
+    ## 여기서 부터는 rank를 override하면 안됨.
+
+    ### (4) Type 1 diabetes	
+    # df_UKBB_Table_2.loc['Type 1 diabetes', "rank"] = 1
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'rank_p'] = 0.0
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'SNP_top_PP'] = ''
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'r'] = 1.0
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'r2'] = 1.0**2
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'CredibleSet'] = True
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'PP'] = 1.0 # 실제 "HLA-DQB1 a.a. position 57 D"의 PP
+
+
+    ##### r / r2값.
+
+    ### (6) Nephrotic syndrome
+    # df_UKBB_Table_2.loc['Nephrotic syndrome', "rank"] = 1
+    # df_UKBB_Table_2.loc['Nephrotic syndrome', 'rank_p'] = 0.0
+    df_UKBB_Table_2.loc['Nephrotic syndrome', 'SNP_top_PP'] = 'HLA_DRB1_03' # ['HLA_DRB1_03', 'AA_DRB1_77_32659917', 'AA_DRB1_74_32659926_R'] 이거 셋이 공동 1등.
+    # df_UKBB_Table_2.loc['', 'r'] = 1.0
+    # df_UKBB_Table_2.loc['', 'r2'] = 1.0**2
+    # df_UKBB_Table_2.loc['Nephrotic syndrome', 'CredibleSet'] = True
+    # df_UKBB_Table_2.loc['Nephrotic syndrome', 'PP'] = 0.17409731656873034 # 실제 "HLA_DRB1_03"의 PP
+
+    ### (7) Grave's disease
+    # df_UKBB_Table_2.loc["Grave's disease", "rank"] = 1
+    # df_UKBB_Table_2.loc["Grave's disease", 'rank_p'] = 0.0
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'SNP_top_PP'] = ''
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'r'] = 1.0
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'r2'] = 1.0**2
+    # df_UKBB_Table_2.loc["Grave's disease", 'CredibleSet'] = True
+    # df_UKBB_Table_2.loc["Grave's disease", 'PP'] = 0.989493056799337
+
+    ### (8) Asthma
+    # df_UKBB_Table_2.loc['Asthma', "rank"] = 1
+    # df_UKBB_Table_2.loc['Asthma', 'rank_p'] = 0.0
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'SNP_top_PP'] = ''
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'r'] = 1.0
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'r2'] = 1.0**2
+    # df_UKBB_Table_2.loc['Asthma', 'CredibleSet'] = True
+    # df_UKBB_Table_2.loc['Asthma', 'PP'] = 0.0913029605423122
+
+    ### (8) Pediatric asthma
+    # df_UKBB_Table_2.loc['Pediatric asthma', "rank"] = 1
+    # df_UKBB_Table_2.loc['Pediatric asthma', 'rank_p'] = 0.0
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'SNP_top_PP'] = ''
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'r'] = 1.0
+    # df_UKBB_Table_2.loc['Type 1 diabetes', 'r2'] = 1.0**2
+    # df_UKBB_Table_2.loc['Pediatric asthma', 'CredibleSet'] = True
+    # df_UKBB_Table_2.loc['Pediatric asthma', 'PP'] = 0.10427171300470647
+
+
+
+    df_UKBB_Table_2 = df_UKBB_Table_2.reset_index(drop=True)
+    # print(df_UKBB_Table_2)
+
+
+    """
+    논문에다 쓸 내용 미리 정리.
+
+    - T1D는 well-established variant를 top으로 찍었다.
+    - RA는 같은 amino acid position이고, 
+        - 선행 연구에서 이 position의 SPG와 VL은 different effect direciton (risk/protection)을 가지면서 거의 같은 통계적 유의 수준으로 confer함이 알려져있었기 때문에 
+        - replicate한 것으로 처리햇다.
+    - IgA도 같은 amino acd position의 거의 같은 resiude의 조합, SWV vs. SV, 을 나타내는 두 varinats들이고, 이 두 variants들 간의 LD r값이 0.9이상이었기 때문에 replicate한것으로 분류했다.
+    - Nephrotic syndrome, GD, Asthma, and Ped_asthma의 경우 모두 the reported top과 LD r값이 0.9이상이었기 때문에 replicate한 것으로 분류했다.
+    
+    
+    """
+
+    return df_UKBB_Table_2
+
+
+
+
+
+def extract_headers_and_rename(_df):
+
+    l_ToExtract = [
+        'Category', 'Phenotype', 'SNP_answer', 'P', 'N',
+        'rank', 'rank_p', 'PP', 'CredibleSet', 'SNP_top_PP', 'r', 'r2', 'No. cases', 'No. controls', 'No. samples',
+    ]
+        # ['N', 'No. cases', 'No. controls', 'No. samples'] 는 supple에만 들어가고 main table에서는 뺄거임.
+
+    df_RETURN = _df.loc[:, l_ToExtract]
+
+
+    d_ToRename = {
+        'Category': "ICD 10",
+        'Phenotype': "Disease Trait",
+        'SNP_answer': "Top Variant (by P-value)",
+        'P': "P-value",
+        'rank': "SUM2HLA Rank (by PP)",
+        'rank_p': "Percent Rank (by PP)",
+        'CredibleSet': "Credible Set (99%)",
+        "SNP_top_PP": "Top Variant (by PP)",
+
+        "N": "N_total (of P-value)",
+        'No. cases': "N_case (of PP)", 
+        'No. controls': 'N_control (of PP)', 
+        'No. samples': 'N_total (of PP)'
+        
+    }
+
+    df_RETURN = df_RETURN.rename(d_ToRename, axis=1)
+
+
+    return df_RETURN
+
+
+
+def trim_columns(_df, _M):
+
+    _df = _df.copy()
+
+    """
+    다음 columns들 좀 수정
+    - "ICD 10": code만 남기기
+    - "P-value": scientific notation
+    - "Percent Rank (by PP)": precesion => 소수점 4째자리까지만. (deprecated)
+    - "PP": 소수점 둘째자리까지만.
+    - "Top Variant (by PP)": Saori format으로.
+    - 'r' and 'r2': 둘 다 소수점 둘째 자리까지해서 합칠것.
+
+    - "SUM2HLA Rank (by PP)"
+    
+    """
+
+    ### (0) sample size는 main table에서는 안보여줄거임.
+    _df = _df.drop(["N_total (of P-value)", "N_case (of PP)", 'N_control (of PP)', 'N_total (of PP)'], axis=1)
+
+
+    ### (1) "P-value"
+    _df['P-value'] = _df['P-value'].map(lambda x: f"{x:.1E}")  # scientific notation, 1자리 소수점
+
+
+    ### (2) 'Percent Rank (by PP)' (deprecated)
+    # _df['Percent Rank (by PP)'] = _df['Percent Rank (by PP)'].map(lambda x: 100 * x).map(lambda x: f"{x:.1f}")
+    # _df = _df.rename({'Percent Rank (by PP)': f"Percent Rank (M={_M}, %)"}, axis=1)
+
+
+    ### (3) SUM2HLA Rank (by PP) 에 '*' 박기
+    df_temp = _df[["SUM2HLA Rank (by PP)", "r"]]
+    sr_rank = pd.Series(
+        [f"{_rank} (*)" if (_rank > 1 and _r >= 0.9) else f"{_rank}" for _index, _rank, _r in df_temp.itertuples()],
+        index=_df.index, name="temp"
+    )
+
+    _df["SUM2HLA Rank (by PP)"] = sr_rank
+    _df.drop(['Percent Rank (by PP)'], axis=1, inplace=True)
+    _df = _df.rename({"SUM2HLA Rank (by PP)": f"SUM2HLA Rank (by PP, M={_M})"}, axis=1)
+
+
+    ### (4) "PP"
+    _df['PP'] = _df['PP'].map(lambda x: f"{x:.2f}")
+
+
+    ### (5) "r" and "r2"
+    def format_r_r2(r, r2, rank=None):
+        def custom_round(x):
+            # 1.00 근방은 강제로 1.00 처리
+            if abs(x - 1.0) < 0.007:
+                return "1.00"
+            else:
+                return f"{x:.2f}"
+            
+        return f"{custom_round(r)} ({custom_round(r2)})"
+        # return f"{custom_round(r)} ({custom_round(r2)})" + ( " (*)" if r >= 0.9 and rank > 1 else "" )
+
+    sr_r_r2 = pd.Series(
+        [format_r_r2(r, r2) for _, r, r2 in _df[['r', 'r2']].itertuples()],
+        name="r (r2)",
+        index=_df.index
+    )
+
+    _df = pd.concat(
+        [
+            _df.drop(['r', 'r2'], axis=1),
+            sr_r_r2
+        ],
+        axis=1
+    )
+
+
+    ### (5) Top Variant (by PP)
+    def to_saori_format(_x):
+
+        if _x.startswith("HLA"):
+
+            l_temp = _x.split("_")
+
+            _allele = l_temp[2]
+
+            if bool(re.match(r'\d{4}', _allele)):
+                _allele = _allele[:2] + ":" + _allele[2:]
+
+            return f"HLA-{l_temp[1]}*{_allele}"
+        
+        elif _x.startswith("AA"):
+
+            ## Hard-exception (UKBB만. BBJ는 할거 없음.)
+            if _x == "AA_DRB1_77_32659917":
+                return "HLA-DRB1 a.a. position 77 N"
+            if _x == "AA_B_63_31432527":
+                return "HLA-B a.a. position 63 E"
+
+
+            l_temp = _x.split("_")
+
+            _string = f"HLA-{l_temp[1]} a.a. position {l_temp[2]} {l_temp[4]}"
+
+            # _HLA = f"HLA-{l_temp[1]}"
+            # _pos = f"a.a. position" l_temp[2]
+            # _residues = l_temp[4]
+
+            return _string
+
+        return "NA"
+
+    _df['Top Variant (by PP)'] = _df['Top Variant (by PP)'].map(lambda x: to_saori_format(x))
+
+
+
+    ### (6) ICD-10 
+    _df['ICD 10'] = _df['ICD 10'].map(lambda x: x.split()[1])
+
+
+
+
+    return _df
+
+
+"""
+
+- 우리는 임의로 diseases들을 3개의 classes들로 나눴다: (1) Autoimmune disease ("AutoImm"), (2) Immune-related disease ("Imm"), and (3) Others.
+- a.a.은 amino acid를 축약한것이다.
+- redidue characters들이 2개 이상 있는 건 OR관계를 나타낸다.
+    - 예를 들어 "HLA-DQB1 a.a. position 57 AD"의 경우, 이 57번 position에서 alanine 혹은 aspartate인 variant를 나타낸다.
+- residue 'x'는 deletion을 나타낸다.
+- r and r2는 two top variants, each identified by P-value and PP, 들 간의 LD이다.
+
+- percentile header관련
+    - The "Percent Rank" column은 The "Rank (by PP)" column의 전체 M개의 HLA variant markers들 중 percentile 순위를 나타낸다 (1위를 0.0%로 하여)
+
+"""
+
+
+##### 이하 deprecated. (2025.09.22.)
+
+
 def classify_diseases_UKBB(_sr_diseases):
 
     d_classify = {
@@ -356,151 +641,6 @@ def classify_diseases_BBJ(_sr_diseases):
 
 
 
-
-def extract_headers_and_rename(_df):
-
-    l_ToExtract = [
-        'Class', 'Phenotype', 'SNP_answer', 'P', 'N',
-        'rank', 'rank_p', 'PP', 'SNP_top_PP', 'r', 'r2', 'No. cases', 'No. controls', 'No. samples',
-    ]
-        # ['N', 'No. cases', 'No. controls', 'No. samples'] 는 supple에만 들어가고 main table에서는 뺄거임.
-
-    df_RETURN = _df.loc[:, l_ToExtract]
-
-
-    d_ToRename = {
-        'Phenotype': "Disease Trait",
-        'SNP_answer': "Top Variant (by P-value)",
-        'P': "P-value",
-        'rank': "SUM2HLA Rank (by PP)",
-        'rank_p': "Percent Rank (by PP)",
-        "SNP_top_PP": "Top Variant (by PP)",
-
-        "N": "N_total (of P-value)",
-        'No. cases': "N_case (of PP)", 
-        'No. controls': 'N_control (of PP)', 
-        'No. samples': 'N_total (of PP)'
-        
-    }
-
-    df_RETURN = df_RETURN.rename(d_ToRename, axis=1)
-
-
-    return df_RETURN
-
-
-
-def trim_columns(_df, _M):
-
-    _df = _df.copy()
-
-    """
-    다음 columns들 좀 수정
-    - "P-value": scientific notation
-    - "Percent Rank (by PP)": precesion => 소수점 4째자리까지만.
-    - "PP": 소수점 둘째자리까지만.
-    - "Top Variant (by PP)": Saori format으로.
-    - 'r' and 'r2': 둘 다 소수점 둘째 자리까지해서 합칠것.
-    
-    """
-
-    ### (0) sample size는 main table에서는 안보여줄거임.
-    _df = _df.drop(["N_total (of P-value)", "N_case (of PP)", 'N_control (of PP)', 'N_total (of PP)'], axis=1)
-
-
-
-    ### (1) "P-value"
-    _df['P-value'] = _df['P-value'].map(lambda x: f"{x:.1E}")  # scientific notation, 1자리 소수점
-
-    ### (2) 'Percent Rank (by PP)'
-    _df['Percent Rank (by PP)'] = _df['Percent Rank (by PP)'].map(lambda x: 100 * x).map(lambda x: f"{x:.1f}")
-    _df = _df.rename({'Percent Rank (by PP)': f"Percent Rank (M={_M}, %)"}, axis=1)
-
-    ### (3) "PP"
-    _df['PP'] = _df['PP'].map(lambda x: f"{x:.2f}")
-
-    ### (4) "r" and "r2"
-    def format_r_r2(r, r2):
-        def custom_round(x):
-            # 1.00 근방은 강제로 1.00 처리
-            if abs(x - 1.0) < 0.007:
-                return "1.00"
-            else:
-                return f"{x:.2f}"
-        return f"{custom_round(r)} ({custom_round(r2)})"
-
-    sr_r_r2 = pd.Series(
-        [format_r_r2(r, r2) for _, r, r2 in _df[['r', 'r2']].itertuples()],
-        name="r (r2)",
-        index=_df.index
-    )
-
-    _df = pd.concat(
-        [
-            _df.drop(['r', 'r2'], axis=1),
-            sr_r_r2
-        ],
-        axis=1
-    )
-
-
-    ### (5) Top Variant (by PP)
-    def to_saori_format(_x):
-
-        if _x.startswith("HLA"):
-
-            l_temp = _x.split("_")
-
-            _allele = l_temp[2]
-
-            if bool(re.match(r'\d{4}', _allele)):
-                _allele = _allele[:2] + ":" + _allele[2:]
-
-            return f"HLA-{l_temp[1]}*{_allele}"
-        
-        elif _x.startswith("AA"):
-
-            ## Hard-exception (UKBB만. BBJ는 할거 없음.)
-            if _x == "AA_DRB1_77_32659917":
-                return "HLA-DRB1 a.a. position 77 N"
-            if _x == "AA_B_63_31432527":
-                return "HLA-B a.a. position 63 E"
-
-
-            l_temp = _x.split("_")
-
-            _string = f"HLA-{l_temp[1]} a.a. position {l_temp[2]} {l_temp[4]}"
-
-            # _HLA = f"HLA-{l_temp[1]}"
-            # _pos = f"a.a. position" l_temp[2]
-            # _residues = l_temp[4]
-
-            return _string
-
-        return "NA"
-
-    _df['Top Variant (by PP)'] = _df['Top Variant (by PP)'].map(lambda x: to_saori_format(x))
-
-
-    return _df
-
-
-"""
-
-- 우리는 임의로 diseases들을 3개의 classes들로 나눴다: (1) Autoimmune disease ("AutoImm"), (2) Immune-related disease ("Imm"), and (3) Others.
-- a.a.은 amino acid를 축약한것이다.
-- redidue characters들이 2개 이상 있는 건 OR관계를 나타낸다.
-    - 예를 들어 "HLA-DQB1 a.a. position 57 AD"의 경우, 이 57번 position에서 alanine 혹은 aspartate인 variant를 나타낸다.
-- residue 'x'는 deletion을 나타낸다.
-- r and r2는 two top variants, each identified by P-value and PP, 들 간의 LD이다.
-
-- percentile header관련
-    - The "Percent Rank" column은 The "Rank (by PP)" column의 전체 M개의 HLA variant markers들 중 percentile 순위를 나타낸다 (1위를 0.0%로 하여)
-
-"""
-
-
-##### 이하 deprecated. (2025.09.22.)
 
 def get_performance_eval_table_v2(_df_ssfn, _df_HLAfm, _col_ToUse, _PPtype_ToUse, _ethnicity="EUR"):
 

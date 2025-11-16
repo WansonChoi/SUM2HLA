@@ -47,6 +47,14 @@ def extract_HLAgene(_marker):
 
     display(sr_HLA_gene)
 
+
+    (2025.11.01.; Comment)
+    - 이 함수는 지금 이 source script내에서 안씀.
+    - 해당 ipynb에서 T1DGC bim을 load해서 이걸 적용하고, 적용해놓은걸 계속 받아서씀.
+    - 근데 이걸 약 한달정도 지나서 다시 보니까, 전혀 모르겠음.
+    - 앞으로는 이걸 가져다 쓰는 부분까지 포함해서 source에 scripting해놔야겠음.
+        - class와 멤버함수를 최대한 잘 활용하자구.
+
     """
 
     p_AA = re.compile(r"^AA_(\w+)_-?\d+_\d+(_\w+)?$")
@@ -180,10 +188,18 @@ class plot_HLA_manhattan_PP():
         ###### Credible set
         CredibleSet_99_mask = df_ToPlot['CredibleSet'].astype(bool).values & (~top_mask)
 
-        # (b) 상위권: 진한 파랑 다이아몬드 (예시)
-        _ax.scatter(x[CredibleSet_99_mask], y[CredibleSet_99_mask],
-                    s=16, color=_color_top, marker='D', edgecolors='none', zorder=2, alpha=0.9, label='PP ≥ 0.10',
-                    clip_on=False) # s=28, color='#1f77b4'
+        if np.any(CredibleSet_99_mask):
+
+            """
+            (2025.11.05.)
+            - 이게 credible set없는데 ax.scatter하게 하니까, 전체 figure 좌하단에 이상한 점 하나가 찍힘.
+            - PLOT_HLA_manhattan_2.py랑 똑같이 예외처리만 추가함.          
+            """
+
+            # (b) 상위권: 진한 파랑 다이아몬드 (예시)
+            _ax.scatter(x[CredibleSet_99_mask], y[CredibleSet_99_mask],
+                        s=16, color=_color_top, marker='D', edgecolors='none', zorder=2, alpha=0.9, label='PP ≥ 0.10',
+                        clip_on=False) # s=28, color='#1f77b4'
 
         ###### 나머지
         rest_mask = ~(top_mask | CredibleSet_99_mask)
@@ -476,6 +492,11 @@ class plot_HLA_manhattan_Pvalue():
 
 
 class plot_Figure_ReA_CLE():
+
+    """
+    - (Deprecated in 2025.11.01.)
+    
+    """
 
     def __init__(self, _df_PP_ReA, _df_PP_CLE, _df_bim_HLAgenes, _figsize=(11, 8), _dpi=300):
 
