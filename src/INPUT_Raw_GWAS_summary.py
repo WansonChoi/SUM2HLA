@@ -38,7 +38,7 @@ class INPUT_Raw_GWAS_summary():
 
     def __init__(self, _df_ss_raw, _hg, _out, _col_SNP=None,
                  _bin_liftOver=which("liftOver"), _fpath_hg38_to_19=None, _fpath_hg18_to_19=None,
-                 _df_ref_bim=None):
+                 _df_ref_bim=None, _d_ToRename_add={}):
         
 
         self.required_columns = ["CHR", "SNP", "BP", "A1", "A2", "BETA", "SE", "Z", "P", "N"]
@@ -70,10 +70,15 @@ class INPUT_Raw_GWAS_summary():
         }
         if isinstance(_col_SNP, str):
             self.d_ToRename.update({_col_SNP: "SNP"})
+        if len(_d_ToRename_add) > 0:
+            self.d_ToRename.update(_d_ToRename_add)
 
 
         ### Duplication removal
-        self.df_ref_bim = _df_ref_bim # 이거 SNP이든 SNP + HLA이든 받고 SNP만 캐오도록 바꿔야 할듯.
+        if isinstance(_df_ref_bim, pd.DataFrame):
+            f_isHLA_locus = Util.is_HLA_locus(_df_ref_bim.iloc[:, 1])
+            self.df_ref_bim = _df_ref_bim[~f_isHLA_locus].copy() # 이거 SNP이든 SNP + HLA이든 받고 SNP만 캐오도록 바꿔야 할듯.
+            # print(f"Subsetted df_ref_bim: {self.df_ref_bim.shape}")
 
 
 
@@ -200,7 +205,7 @@ class INPUT_Raw_GWAS_summary():
             index = self.df_ss_raw.index
         )
 
-        self.df_ss_raw = pd.concat([self.df_ss_raw, sr_Z, sr_P], axis=1)
+        self.df_ss_raw = pd.concat([self.df_ss_raw.drop(['P'], errors='ignore', axis=1), sr_Z, sr_P], axis=1)
 
         return self.df_ss_raw
 
