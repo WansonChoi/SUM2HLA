@@ -253,6 +253,12 @@ class SWCA:
         self.df_ma = transform_imputed_Z_to_ma(self.df_Z_imputed, self.df_ref_MAF, self.N)
         self.df_ma_r2pred = transform_imputed_Z_to_ma(self.df_Z_imputed_r2pred, self.df_ref_MAF, self.N)
 
+
+        ## (2025.11.16.) ma 파일에서도 'freq'는 제외, GCTA로 test하는건 더 이상 없다 가정하고.
+        self.df_ma = self.df_ma.drop(['freq'], axis=1)
+        self.df_ma_r2pred = self.df_ma_r2pred.drop(['freq'], axis=1)
+
+        ## export
         self.fpath_ma = self.out_prefix + ".ma"
         self.fpath_ma_r2pred = self.out_prefix + f".r2pred{self.r2_pred}.ma"
 

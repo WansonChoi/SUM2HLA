@@ -8,7 +8,7 @@ import src.SWCA_PostCalc as SWCA_PostCalc
 
 
 
-def transform_CMVN_result_to_ma(_df_CMVN_result):
+def transform_CMVN_result_to_ma(_df_CMVN_result, _f_exclude_MAF=True):
     ### 간단함. column 재구성 && rename 이거 둘이 끝임.
 
     """
@@ -19,7 +19,9 @@ def transform_CMVN_result_to_ma(_df_CMVN_result):
 
     df_RETURN = pd.concat(
         [
-            _df_CMVN_result[['SNP', 'A1', 'A2', 'freq']],
+            _df_CMVN_result[
+                (['SNP', 'A1', 'A2'] if _f_exclude_MAF else ['SNP', 'A1', 'A2', 'freq'])
+            ],
             _df_CMVN_result['cZ'].rename("bC"),
             _df_CMVN_result['se'].rename("bC_se"),
             _df_CMVN_result['cP'].rename("pC"),

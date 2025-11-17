@@ -202,6 +202,9 @@ def __MAIN__(_fpath_ss_matched, _fpath_ref_LD, _fpath_ref_MAF):
         .reset_index("SNP", drop=False)
 
     if isinstance(df_ref_MAF, pd.DataFrame):
+
+        df_ref_MAF = df_ref_MAF.drop(['MAF'], axis=1) # (2025.11.16.) MAF column때고 export
+
         df_RETURN = df_RETURN.merge(df_ref_MAF, on=['SNP'])
 
 
