@@ -7,6 +7,8 @@ import math
 
 import src.Util as mod_Util
 
+from threadpoolctl import threadpool_limits
+
 
 ########## Plotting module for result summary
 # # %matplotlib inline
@@ -132,8 +134,12 @@ def calc_conditional_mean_cov(_df_X1_obs, _df_LD_11, _df_LD_12, _df_LD_21, _df_L
                         .set_index("SNP") \
                         .loc[_df_LD_11.index, :]
     
-    # display(_df_X1_obs_2)
-    # display(_df_LD_11)
+    # print(_df_X1_obs_2)
+    # print(_df_LD_11)
+    # print(_df_LD_11.shape)
+    # _df_LD_11.to_csv(
+    #     "/data02/wschoi/_hCAVIAR_v2/SUM2HLA/df_LD_11.export.txt", sep='\t', header=True, index=False, na_rep="NA"
+    # )
     
     """
     이렇게 display해서 `.loc[_df_LD_11.index, :]` 이걸로 확실히 match되는거 확인함. (2025.02.18.)
@@ -141,14 +147,60 @@ def calc_conditional_mean_cov(_df_X1_obs, _df_LD_11, _df_LD_12, _df_LD_21, _df_L
     
     
     ##### (2) calc conditional mean and covariance
-    
-    arr_LD_11_inv = np.linalg.inv(_df_LD_11)
 
-    conditional_mean = _df_LD_21.values @ arr_LD_11_inv @ _df_X1_obs_2['Z'].values # mu1 and mu2는 0이라서 제외함.
-    conditional_mean = pd.DataFrame({"Conditional_mean": conditional_mean}, index=_df_LD_22.index)
+    def func_v1(): # v1 / original (최초로 작업했던거 and Deadlock of numpy threads 나던거.)
+
+        arr_LD_11_inv = np.linalg.inv(_df_LD_11)
+        print(arr_LD_11_inv)
+
+        conditional_mean = _df_LD_21.values @ arr_LD_11_inv @ _df_X1_obs_2['Z'].values # mu1 and mu2는 0이라서 제외함.
+        conditional_mean = pd.DataFrame({"Conditional_mean": conditional_mean}, index=_df_LD_22.index)
+        
+        conditional_cov = _df_LD_22.values - _df_LD_21.values @ arr_LD_11_inv @ _df_LD_12.values
+        conditional_cov = pd.DataFrame(conditional_cov, columns=_df_LD_22.columns, index=_df_LD_22.index)
+
+        return conditional_mean, conditional_cov
     
-    conditional_cov = _df_LD_22.values - _df_LD_21.values @ arr_LD_11_inv @ _df_LD_12.values
-    conditional_cov = pd.DataFrame(conditional_cov, columns=_df_LD_22.columns, index=_df_LD_22.index)
+
+    def func_v2(): # threadpool_limits 활용
+
+        with threadpool_limits(limits=1, user_api='blas'):
+            arr_LD_11_inv = np.linalg.inv(_df_LD_11)
+            # print(arr_LD_11_inv)
+
+            conditional_mean = _df_LD_21.values @ arr_LD_11_inv @ _df_X1_obs_2['Z'].values # mu1 and mu2는 0이라서 제외함.
+            conditional_mean = pd.DataFrame({"Conditional_mean": conditional_mean}, index=_df_LD_22.index)
+            
+            conditional_cov = _df_LD_22.values - _df_LD_21.values @ arr_LD_11_inv @ _df_LD_12.values
+            conditional_cov = pd.DataFrame(conditional_cov, columns=_df_LD_22.columns, index=_df_LD_22.index)
+
+        return conditional_mean, conditional_cov
+
+
+    def func_v3(): # solve활용. (얘도 잘 되는거 확인함.)
+
+        conditional_mean = _df_LD_21.values @ np.linalg.solve(_df_LD_11, _df_X1_obs_2['Z'].values) # mu1 and mu2는 0이라서 제외함.
+        conditional_mean = pd.DataFrame({"Conditional_mean": conditional_mean}, index=_df_LD_22.index)
+        
+        conditional_cov = _df_LD_22.values - _df_LD_21.values @ np.linalg.solve(_df_LD_11, _df_LD_12.values)
+        conditional_cov = pd.DataFrame(conditional_cov, columns=_df_LD_22.columns, index=_df_LD_22.index)
+
+        return conditional_mean, conditional_cov
+
+
+    # conditional_mean, conditional_cov = func_v1()
+    conditional_mean, conditional_cov = func_v2()
+    # conditional_mean, conditional_cov = func_v3()
+
+    """
+    - 최종 v2로 가는걸로 함.
+        - 어차피 v3의 solve를 적용한다 쳐도, 잠정적으로 Deadlock은 함수 종류보다는 멀티스레딩 자체의 문제이기 때문에 threadpool_limits을 걸어주는게 좋음.
+            - (당장 `func_v3()`내에 걸어놓지는 않았음.)
+        - 그럴거면 걍 v2로.
+        - 추가적으로, solve를 적용하니 아주 살짝 다름. (얘가 오히려 더 정확할 수 있다고 함.)
+            - 추후 T1DGC와의 미세하게 replication안되는 것 처럼 보이는 문제를 방지하고자 함.
+    
+    """
     
     
     return conditional_mean, conditional_cov
@@ -182,7 +234,7 @@ def __MAIN__(_fpath_ss_matched, _fpath_ref_LD, _fpath_ref_MAF):
 
     ##### (2) LD를 parition한 SNP + HLA set으로 나누기 => 4 marices
     LD_partitioned = partition_LD_matrix(df_LD_PSD, sr_LD_SNP_markers, sr_LD_HLA_markers)    
-
+    # print(LD_partitioned)
 
     
     ##### (3) Conditional mean과 covariance계산하기 (main; the summary imputation)
@@ -190,6 +242,8 @@ def __MAIN__(_fpath_ss_matched, _fpath_ref_LD, _fpath_ref_MAF):
         df_ss_matched[['SNP_LD', 'Z_fixed']],
         *LD_partitioned
     )
+    # print(df_cond_mean)
+    # print(df_cond_cov)
 
 
 
