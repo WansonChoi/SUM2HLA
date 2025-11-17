@@ -1,5 +1,6 @@
 import os, sys
 from os.path import basename
+from shutil import which
 from datetime import datetime
 import logging
 from contextlib import redirect_stdout
@@ -104,7 +105,7 @@ if __name__ == "__main__":
     parser.add_argument("--gpu-id", help="A GPU ID to use. (applied only when GPUs are available)", 
                         type=int, default=0, metavar="")
 
-    parser.add_argument("--plink-path", help="Path for PLINK exec.", metavar="")
+    parser.add_argument("--plink-path", help="set path for PLINK binary exec manually.", metavar="", default=which("plink"))
 
     ##### [1] Argument parsing #####
 

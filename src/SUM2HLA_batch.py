@@ -25,7 +25,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
                  _f_run_SWCR=True, _N_max_iter=3, _r2_pred=0.6, 
                  _ncp=5.2,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
-                 _plink="~/miniconda3/envs/jax_gpu/bin/plink", _gcta=None
+                 _plink=which("plink"), _gcta=None
     ):
 
         ##### INPUT
