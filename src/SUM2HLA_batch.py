@@ -22,7 +22,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
     def __init__(self, _ss_raw, _ref_prefix, _out_prefix,
                  _batch_size=30, 
-                 _f_run_SWCR=True, _N_max_iter=5, _r2_pred=0.6, 
+                 _f_run_SWCR=True, _N_max_iter=3, _r2_pred=0.6, 
                  _ncp=5.2,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
                  _plink="~/miniconda3/envs/jax_gpu/bin/plink", _gcta=None
@@ -35,7 +35,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
 
         ### The reference dataset.
-        self.d_fpath_LD = {"whole": _ref_prefix + ".NoNA.PSD.ld"} # 예전에 HLA sub-region 별로 짤라서 활용하던대로 둠.
+        self.d_fpath_LD = {"whole": _ref_prefix + ".NoNA.PSD.ld" if exists(_ref_prefix + ".NoNA.PSD.ld") else _ref_prefix + ".NoNA.PSD.ld.gz"} # 예전에 HLA sub-region 별로 짤라서 활용하던대로 둠.
         self.fpath_LD_SNP_HLA = _ref_prefix if _bfile_ToClump is None else _bfile_ToClump
         self.fpath_LD_MAF = _ref_prefix + ".FRQ.frq"
         self.out_prefix_LD = _out_prefix + ".LD"
@@ -83,7 +83,8 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
         self.OUT_PIP_PP_fpath = {_N_causal: {'whole': None} for _N_causal in range(1, self.N_causal + 1)} # filepath
 
         ## Types of markers to calculate PP.
-        self.l_type = ('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP', 'AA+HLA')
+        # self.l_type = ('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP', 'AA+HLA')
+        self.l_type = ('AA+HLA',)
 
 
         ### SWCR
@@ -170,13 +171,14 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
                 # (2025.05.14.) 얘 잠정적으로 `mod_PostCal_Cov.__MAIN__()` 함수 안으로 집어넣었으면 좋겠음.
                     # (2025.06.28.) No. 혹시나 나중에 N_causal >= 2 할때 여기 있는게 더 나을 듯.
                 # 'fine-mapping_SWCA.py'에서는 문제없이 집어넣었음.
-        print("LL_0: ", self.LL_0)
+
+        # print("LL_0: ", self.LL_0)
 
         Lprior_0 = (0 * np.log(self.gamma) + (self.LDmatrix.df_LD.shape[0] - 0) * np.log(1 - self.gamma))
-        print(Lprior_0)
+        # print(Lprior_0)
         
         self.LL_0 += Lprior_0
-        print("LL_0: ", self.LL_0)
+        # print("LL_0: ", self.LL_0)
 
 
 

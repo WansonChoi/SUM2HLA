@@ -55,7 +55,7 @@ def check_reference_data(_ref) -> bool:
 
 
     ### Existence - 2: LD file
-    if not exists(_ref + ".NoNA.PSD.ld"):
+    if not (exists(_ref + ".NoNA.PSD.ld") or exists(_ref + ".NoNA.PSD.ld.gz")):
         raise FileNotFoundError(f"Reference LD file not found: {_ref + '.NoNA.PSD.ld'}")
 
     return True
