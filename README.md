@@ -19,7 +19,7 @@ SUM2HLA supports Linux and macOS. Windows is supported only via the Windows Subs
 We have specifically tested SUM2HLA on the following environments:
 - Linux: CentOS 7
 - macOS: Sequoia (v15.7.2)
-- Windows: WSL-Ubuntu
+- Windows: Windows 11 WSL-Ubuntu 22.04.5 LTS
 
 
 ### (2-2) Prerequisites: Anaconda or Miniconda
@@ -37,7 +37,7 @@ Ensure that `git` is installed on your system. Clone this repository and move to
 
 ```bash
 git clone https://github.com/WansonChoi/SUM2HLA.git
-mv SUM2HLA/
+cd SUM2HLA/
 ```
 
 
@@ -46,7 +46,7 @@ mv SUM2HLA/
 Create a virtual environment named "SUM2HLA" and install the necessary dependencies using the command below:
 
 ```bash
-conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 jaxlib=0.4.14 git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover
+conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cpu*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover
 ```
 
 **For Users with NVIDIA GPUs (Linux only)** If you are using a Linux system with an NVIDIA GPU, you can install the GPU-enabled version of jaxlib to accelerate SUM2HLA. Use the following command instead to create the environment:
@@ -98,7 +98,7 @@ python SUM2HLA.py \
 
 This example uses GWAS summary statistics for Rheumatoid arthritis (RA) and a **1000 Genomes (1kG) Project European** reference dataset, both provided in this repository.
 
-> _Note: While the original paper utilizes the Type 1 Diabetes Genetic Consortium (T1DGC) reference dataset, this example uses the 1kG dataset because the T1DGC data is not publicly open._
+> Note: While the original paper utilizes the Type 1 Diabetes Genetic Consortium (T1DGC) reference dataset, this example uses the 1kG dataset because the T1DGC data is not publicly open.
 
 Expected Runtime: Approximately 3 minutes on a GPU or 10 minutes on a CPU (based on our system specifications).
 
@@ -131,7 +131,7 @@ Column Descriptions:
 3. CredibleSet(99%): Indicates whether the variant is included in the 99% credible set (accumulated top PPs reaching 0.99).
 4. rank: The rank of the variant (The variant with the highest PP has a rank of 1).
 5. rank_p: The percentile rank among all $h$ HLA variants provided by the reference.
-	- _Note: The highest PP variant has a rank_p of 0.0 (calculated as $0 / h$). The 2nd highest is $1 / h$._
+	- Note: The highest PP variant has a rank_p of 0.0 (calculated as $0 / h$). The 2nd highest is $1 / h$.
 6. LL+Lprior: The sum of the log-likelihood (calculated using observed association z-scores and the reference LD matrix via multivariate normal distribution) and the log-prior probability. This value is used to calculate logPP.
 7. logPP: The natural logarithm of the posterior probability, derived from the LL+Lprior column before conversion to the final PP.
 8. LL+Lprior_diff: The difference in LL+Lprior values between two adjacent variants in the sorted list.
