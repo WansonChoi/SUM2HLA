@@ -44,7 +44,8 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
         ### output path and prefix
         self.out_prefix = _out_prefix
         self.out_dir = dirname(_out_prefix)
-        os.makedirs(self.out_dir, exist_ok=True)
+        if self.out_dir != '':
+            os.makedirs(self.out_dir, exist_ok=True)
 
 
         ### Clumping

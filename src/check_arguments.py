@@ -64,6 +64,9 @@ def check_reference_data(_ref) -> bool:
 
 def check_outdir(_out_prefix) -> bool:
 
+    if dirname(_out_prefix) == '':
+        return True
+
     if not exists(dirname(_out_prefix)):
         os.makedirs(dirname(_out_prefix), exist_ok=True)
 

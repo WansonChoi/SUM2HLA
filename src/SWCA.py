@@ -119,7 +119,8 @@ class SWCA:
 
         ##### OUTPUT
         self.out_dir = dirname(self.out_prefix) # out_dir
-        os.makedirs(self.out_dir, exist_ok=True)
+        if self.out_dir != '':
+            os.makedirs(self.out_dir, exist_ok=True)
 
         self.df_Z_imputed = None
         self.df_Z_imputed_r2pred = None
