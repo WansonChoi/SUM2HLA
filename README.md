@@ -55,7 +55,7 @@ conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 jaxlib=0.4.14 git-lfs panda
 conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cuda112py310*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover 
 ```
 
-> _You only need to create the environment once. For future usage, you can skip this step and proceed directly to activation._
+> Note: You only need to create the environment once. For future usage, you can skip this step and proceed directly to activation.
 
 
 ### (2-5) Activate and Fetch Large Files (Important for running the example)
