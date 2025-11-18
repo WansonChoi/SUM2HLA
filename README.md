@@ -36,8 +36,8 @@ We assume that the latest version of **Anaconda** (or **Miniconda**) is installe
 Ensure that `git` is installed on your system. Clone this repository and move to the directory using the following commands:
 
 ```bash
-$ git clone https://github.com/WansonChoi/SUM2HLA.git
-$ mv SUM2HLA/
+git clone https://github.com/WansonChoi/SUM2HLA.git
+mv SUM2HLA/
 ```
 
 
@@ -46,24 +46,51 @@ $ mv SUM2HLA/
 Create a virtual environment named "SUM2HLA" and install the necessary dependencies using the command below:
 
 ```bash
-$ conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 jaxlib=0.4.14=cuda112py310h8c6a9b4_201 pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover 
+conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 jaxlib=0.4.14 git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover
 ```
 
-> _Note: You only need to create the environment once. For future usage, you can skip this step and proceed directly to activation._
-
-After creating the environment, activate it:
+**For Users with NVIDIA GPUs (Linux only)** If you are using a Linux system with an NVIDIA GPU, you can install the GPU-enabled version of jaxlib to accelerate SUM2HLA. Use the following command instead to create the environment:
 
 ```bash
-$ conda activate SUM2HLA
+conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cuda112py310*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover 
 ```
 
+> _You only need to create the environment once. For future usage, you can skip this step and proceed directly to activation._
+
+
+### (2-5) Activate and Fetch Large Files (Important for running the example)
+
+After creating the environment, you must activate it and retrieve the reference LD matrix file (365MB). This step is crucial for running the example successfully.
+
+
+First, activate the SUM2HLA environment:
+
+```bash
+conda activate SUM2HLA
+```
+
+Next, use the git-lfs tool installed within the environment to initialize and fetch the actual data files:
+
+```bash
+git lfs install --local
+git lfs pull
+```
+
+Why are these commands necessary?
+
+- `git lfs pull`: Even if git clone completed successfully, the large LD matrix file (example/REF_1kG.EUR.hg19.SNP+HLA.NoNA.PSD.ld.gz) may have been downloaded as a small "pointer file" rather than the actual binary data. This command ensures the real file is downloaded.
+
+- `git lfs install --local`: We use the --local option to ensure the configuration is applied only to this repository using the version installed in our Conda environment, without modifying or conflicting with your global system settings.
+
+
+> Note: These two git-lfs commands also need to be performed only once during the initial setup.
 
 ## (3) Running an Example
 
 With the SUM2HLA environment activated, run SUM2HLA using the provided example data:
 
 ```bash
-$ python SUM2HLA.py \
+python SUM2HLA.py \
 	--sumstats example/WTCCC.RA.GWASsummary.N4798.assoc.logistic \
 	--ref example/REF_1kG.EUR.hg19.SNP+HLA \
 	--out OUT.WTCCC_RA.REF_1kG.EUR
@@ -78,7 +105,7 @@ Expected Runtime: Approximately 3 minutes on a GPU or 10 minutes on a CPU (based
 Once finished, you can deactivate the environment:
 
 ```bash
-$ conda deactivate
+conda deactivate
 ```
 
 
