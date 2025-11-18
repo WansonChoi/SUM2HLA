@@ -90,6 +90,14 @@ SUM2HLA generates two main output files:
 
 This file provides the causal Posterior Probabilities (PP) for each HLA variant in the target disease. It contains $h$ rows (corresponding to the number of HLA variants in the reference dataset; e.g., 1,573 for the 1kG EUR reference) and 9 columns. The file is sorted in descending order by PP.
 
+| rank | rank_p | SNP | PP | CredibleSet(99%) | LL+Lprior | LL+Lprior_diff | LL+Lprior_diff_acc | logPP |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | 0.0 | HLA_DRB1_0401 | 0.9986325167877164 | True | 267.54632568359375 | 0.0 | 0.0 | -0.0013684190707294874 |
+| 2 | 0.0006357... | AA_DRB1_120_32657518_S | 0.0013124103068841014 | False | 260.91180419921875 | 6.634521484375 | 6.634521484375 | -6.6358899034457295 |
+| 3 | 0.0012714... | AA_DRB1_120_32657518_N | 1.990844656179909e-05 | False | 256.72332763671875 | 4.1884765625 | 10.822998046875 | -10.82436646594573 |
+| 4 | 0.0019071... | AA_DRB1_11_32660115_V | 1.990844656179909e-05 | False | 256.72332763671875 | 0.0 | 10.822998046875 | -10.82436646594573 |
+| 5 | 0.0025429... | AA_DRB1_96_32657590_Y | 2.6564321773915476e-06 | False | 254.70916748046875 | 2.01416015625 | 12.837158203125 | -12.83852662219573 |
+
 Column Descriptions:
 1. SNP: The marker label for each HLA variant.
 2. PP: The causal posterior probability.
