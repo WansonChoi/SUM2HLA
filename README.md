@@ -49,6 +49,8 @@ Create a virtual environment named "SUM2HLA" and install the necessary dependenc
 $ conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 jaxlib=0.4.14=cuda112py310h8c6a9b4_201 pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover 
 ```
 
+> _Note: You only need to create the environment once. For future usage, you can skip this step and proceed directly to activation._
+
 After creating the environment, activate it:
 
 ```bash
@@ -69,7 +71,7 @@ $ python SUM2HLA.py \
 
 This example uses GWAS summary statistics for Rheumatoid arthritis (RA) and a **1000 Genomes (1kG) Project European** reference dataset, both provided in this repository.
 
-_Note: While the original paper utilizes the Type 1 Diabetes Genetic Consortium (T1DGC) reference dataset, this example uses the 1kG dataset as the T1DGC data is not publicly available._
+> _Note: While the original paper utilizes the Type 1 Diabetes Genetic Consortium (T1DGC) reference dataset, this example uses the 1kG dataset because the T1DGC data is not publicly open._
 
 Expected Runtime: Approximately 3 minutes on a GPU or 10 minutes on a CPU (based on our system specifications).
 
@@ -97,7 +99,7 @@ Column Descriptions:
 	- _Note: The highest PP variant has a rank_p of 0.0 (calculated as $0 / h$). The 2nd highest is $1 / h$._
 6. LL+Lprior: The sum of the log-likelihood (calculated using observed association z-scores and the reference LD matrix via multivariate normal distribution) and the log-prior probability. This value is used to calculate logPP.
 7. logPP: The natural logarithm of the posterior probability, derived from the LL+Lprior column before conversion to the final PP.
-8. LL+Lprior_diff: The difference in LL+Lprior values between adjacent variants in the sorted list.
+8. LL+Lprior_diff: The difference in LL+Lprior values between two adjacent variants in the sorted list.
 9. LL+Lprior_diff_acc: The difference in LL+Lprior values between the top-ranked variant (rank 1) and the current variant (rank N).
 
 
