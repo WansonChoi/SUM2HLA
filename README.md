@@ -58,7 +58,7 @@ conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cuda112py310
 > Note: You only need to create the environment once. For future usage, you can skip this step and proceed directly to activation.
 
 
-### (2-5) Activate and Fetch Large Files (Important for running the example)
+### (2-5) Activate and Fetch Example Data
 
 After creating the environment, you must activate it and retrieve the reference LD matrix file (382MB). This step is crucial for running the example successfully.
 
