@@ -18,8 +18,8 @@ SUM2HLA supports Linux and macOS. Windows is supported only via the Windows Subs
 
 We have specifically tested SUM2HLA on the following environments:
 - Linux: CentOS 7
-- macOS: Sequoia (v15.7.2)
-- Windows: Windows 11 WSL-Ubuntu 22.04.5 LTS
+- macOS: Sequoia (v15.7.2; Intel) and Tahoe (v26.1; M1 Pro)
+- Windows: Windows 11 WSL-Ubuntu 22.04.5 LTS and 24.04.3 LTS
 
 
 ### (2-2) Prerequisites: Anaconda or Miniconda
@@ -49,8 +49,8 @@ Create a virtual environment named "SUM2HLA" and install the necessary dependenc
 conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cpu*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover
 ```
 
-#### For Users with NVIDIA GPUs (Linux only)
-If you are using a Linux or WSL system with an NVIDIA GPU, you can install the GPU-enabled version of jaxlib to accelerate SUM2HLA. Use the following command instead to create the environment:
+#### For Users with NVIDIA GPUs
+If you are using a Linux or WSL with an NVIDIA GPU, you can install the GPU-enabled version of jaxlib to accelerate SUM2HLA. Use the following command instead to create the environment:
 
 ```bash
 conda create -y -n SUM2HLA -c conda-forge jax "jaxlib=*=cuda*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover
