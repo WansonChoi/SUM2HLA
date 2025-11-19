@@ -49,11 +49,18 @@ Create a virtual environment named "SUM2HLA" and install the necessary dependenc
 conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cpu*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover
 ```
 
-**For Users with NVIDIA GPUs (Linux only)** If you are using a Linux system with an NVIDIA GPU, you can install the GPU-enabled version of jaxlib to accelerate SUM2HLA. Use the following command instead to create the environment:
+#### For Users with NVIDIA GPUs (Linux only)
+If you are using a Linux or WSL system with an NVIDIA GPU, you can install the GPU-enabled version of jaxlib to accelerate SUM2HLA. Use the following command instead to create the environment:
 
 ```bash
-conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cuda112py310*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover 
+conda create -y -n SUM2HLA -c conda-forge jax "jaxlib=*=cuda*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover
 ```
+
+<!-- ```bash
+conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cuda112py310*" git-lfs pandas scipy numpy threadpoolctl bioconda::plink bioconda::ucsc-liftover 
+``` -->
+
+> Note: The "jaxlib=\*=cuda*" pattern ensures that Conda selects a GPU-accelerated build compatible with your specific driver version, whether it is CUDA 11 or 12.
 
 > Note: You only need to create the environment once. For future usage, you can skip this step and proceed directly to activation.
 
@@ -78,9 +85,10 @@ git lfs pull
 
 Why are these commands necessary?
 
+- `git lfs install --local`: We use the --local option to ensure the configuration is applied only to this repository using the version installed in our Conda environment, without modifying or conflicting with your global system settings.
+
 - `git lfs pull`: Even if git clone completed successfully, the large LD matrix file (example/REF_1kG.EUR.hg19.SNP+HLA.NoNA.PSD.ld.gz) may have been downloaded as a small "pointer file" rather than the actual binary data. This command ensures the real file is downloaded.
 
-- `git lfs install --local`: We use the --local option to ensure the configuration is applied only to this repository using the version installed in our Conda environment, without modifying or conflicting with your global system settings.
 
 
 > Note: These two git-lfs commands also need to be performed only once during the initial setup.
