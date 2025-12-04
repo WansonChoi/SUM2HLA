@@ -116,7 +116,7 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
         ## cma format으로 변환
         df_CMVN_temp_2 = transform_CMVN_result_to_ma(df_CMVN_temp)
 
-        OUT_CMVN = _out_prefix + f".ROUND_{i}.cma.cojo"
+        OUT_CMVN = _out_prefix + f".ROUND_{i}.SWCA"
         df_CMVN_temp_2.sort_values("pC").to_csv(OUT_CMVN, sep='\t', header=True, index=False, na_rep="NA")
 
 
