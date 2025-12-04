@@ -54,7 +54,14 @@ def make_psd(matrix):
     return eigenvectors @ np.diag(eigenvalues) @ eigenvectors.T
 
 
+
 def make_SUM2HLA_LDmatrix(_df_ld_raw, _df_bim_SNP_HLA):
+
+    """
+    - (2025.12.03.)
+        - 얘도 아래 stream으로 처리하는거 준비하면서 다시 test했음. 완벽하게 replicaiton됨.
+    
+    """
 
     df_ld_NoNA = _df_ld_raw.fillna(0.0)
 
@@ -66,6 +73,76 @@ def make_SUM2HLA_LDmatrix(_df_ld_raw, _df_bim_SNP_HLA):
     df_ld_NoNA_PSD = pd.DataFrame(df_ld_NoNA_PSD, columns=_df_bim_SNP_HLA.iloc[:, 1], index=_df_bim_SNP_HLA.iloc[:, 1])
 
     return df_ld_NoNA_PSD
+
+
+
+def wrapper_make_SUM2HLA_LDmatrix(_fpath_ld_raw, _fpath_bim_SNP_HLA, _out):
+
+    print("Loading raw LD matrix for SUM2HLA.")
+    df_LD_raw = pd.read_csv(_fpath_ld_raw, sep='\t', header=None)
+
+    print("Loading bim file of the T1DGC reference panel.")
+    df_bim = pd.read_csv(_fpath_bim_SNP_HLA, sep='\t', header=None, names=['CHR', 'SNP', 'GD', 'BP', 'A1', 'A2'])
+
+
+    print("Preprocessing the LD matrix.")
+    df_LD_NoNA_PSD = make_SUM2HLA_LDmatrix(df_LD_raw, df_bim)
+
+
+    df_LD_NoNA_PSD.to_csv(_out, sep='\t', header=True, index=False, na_rep="NA")
+
+    return _out, df_LD_NoNA_PSD
+
+
+
+def make_SUM2HLA_LDmatrix_stream(_fpath_LD_matrix_raw, _fpath_bim_SNP_HLA, _out, _nrows=None):
+
+    """
+    - (2025.12.03.)
+        - "_ClusterPhes_v4/20241204_prepr_LDmatrix.ipynb 내에 `prepr_LD_matrix()` 함수를 살짝만 수정한거.
+        - 완벽하게 replication되는거 이 날 재확인함.
+        - 얘는 일단 일단 deprecate. 위에꺼가 좀 더 간단해서 얘를 우선 쓰기로 함.
+    
+    """
+    
+    df_bim = pd.read_csv(
+        _fpath_bim_SNP_HLA, sep='\t', header=None, names=['CHR', 'SNP', 'GD', 'BP', 'A1', 'A2']
+    )
+    print(df_bim)
+    
+    
+    l_header = df_bim['SNP'].tolist()    
+    print(l_header[:5])
+    print(len(l_header))
+    
+
+    with open(_fpath_LD_matrix_raw, 'r') as f_LD_matrix, open(_out, 'w') as f_out:
+        
+        ### set header
+        f_out.write('\t'.join(l_header) + "\n")
+        
+        
+        for i, line in enumerate(f_LD_matrix):
+            
+            l_temp = list(map(lambda x: float(x), line.split()))
+            
+            if i % 1000 == 0:
+                print("===[{}]: {}".format(i, l_temp[:10]))
+            
+            
+            ### 값 수정
+            iter_isna = np.isnan(l_temp)
+            iter_fillna_zero = (0.0 if _f_isna else _ld_value for _f_isna, _ld_value in zip(iter_isna, l_temp))
+            iter_fill_diagonal = (1.0 if i == j else _ for j, _ in enumerate(iter_fillna_zero))
+                    
+            f_out.write('\t'.join(list(map(lambda x: str(x), iter_fill_diagonal))) + "\n")
+
+            if isinstance(_nrows, int) and i >= _nrows:
+                break
+            
+            
+    return _out
+
 
 
 def is_psd(matrix):
@@ -81,8 +158,6 @@ def is_psd(matrix):
         return True
     except np.linalg.LinAlgError:
         return False
-
-
 
 
 
