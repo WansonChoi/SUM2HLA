@@ -1,1 +1,5 @@
 example/REF_1kG.EUR.hg19.SNP+HLA.NoNA.PSD.ld.gz filter=lfs diff=lfs merge=lfs -text
+
+*.PP linguist-detectable=false
+*.PP linguist-generated=true
+
