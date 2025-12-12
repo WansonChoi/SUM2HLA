@@ -93,6 +93,8 @@ Why are these commands necessary?
 
 > Note: These two git-lfs commands also need to be performed only once during the initial setup.
 
+
+
 ## (3) Running an Example
 
 With the SUM2HLA environment activated, run SUM2HLA using the provided example data:
@@ -115,6 +117,7 @@ Once finished, you can deactivate the environment:
 ```bash
 conda deactivate
 ```
+
 
 
 ## (4) Output Files
@@ -179,10 +182,19 @@ This file contains the results of the Stepwise Conditional Analysis (SWCA) in JS
 For details on additional output files, please refer to the Wiki section.
 
 
+
 ## (5) How to create a reference dataset for SUM2HLA?
 
 Detailed instructions are available in the Wiki section.
 
-## (6) Citation
+
+
+## (6) Summary Statistics from the Paper
+
+We have provided the output summary statistics from the main analyses presented in our manuscript in the `results/` directory. Please refer to `results/README.md` for detailed descriptions of the data.
+
+
+
+## (7) Citation
 
 Under review.
