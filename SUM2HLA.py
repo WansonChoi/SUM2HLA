@@ -187,6 +187,8 @@ if __name__ == "__main__":
         logger_root.info(f"JAX with {jax_platform} (Total cores: {len(devices)})")
         logger_root.info(f"Device details: {devices}")
 
+        jax.config.update('jax_default_matmul_precision', 'float32') # No bfloat16.
+
 
     t_start = datetime.now()
     logger_root.info(f"SUM2HLA start. ({t_start})")
