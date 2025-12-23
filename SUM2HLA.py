@@ -158,8 +158,11 @@ if __name__ == "__main__":
         # 아래 platform정보 불러오기 전에 assign해야 함. 안그러면 available한 모든 gpu들을 모두 잡고 거기서 assign하는 하나를 씀.
         # CPU만 주어졌을 때는 effect 없음.
 
-    jax_platform = jax.lib.xla_bridge.get_backend().platform
-
+    try:
+        jax_platform = jax.extend.backend.get_backend().platform # jax version >= 0.8
+    except (AttributeError, ImportError):
+        jax_platform = jax.lib.xla_bridge.get_backend().platform
+    
     if jax_platform == "cpu":
         logger_root.info(f"JAX with {jax_platform}")
 
