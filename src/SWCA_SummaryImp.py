@@ -210,7 +210,7 @@ def calc_conditional_mean_cov(_df_X1_obs, _df_LD_11, _df_LD_12, _df_LD_21, _df_L
 def __MAIN__(_fpath_ss_matched, _fpath_ref_LD, _fpath_ref_MAF):
     
     ##### (0) load data
-    df_ss_matched = pd.read_csv(_fpath_ss_matched, sep='\s+', header=0) \
+    df_ss_matched = pd.read_csv(_fpath_ss_matched, sep=r'\s+', header=0) \
                         if isinstance(_fpath_ss_matched, str) else _fpath_ss_matched
     
     if df_ss_matched['Z_fixed'].isna().any(): # 사실상 CD를 위한 예외처리

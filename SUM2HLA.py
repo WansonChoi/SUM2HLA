@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser.add_argument("--skip-SWCA", help="Skip the StepWise Conditional Analysis (SWCA).",
                         action="store_true")
 
-    parser.add_argument("--gpu-id", help="A GPU ID to use. (applied only when GPUs are available)", 
+    parser.add_argument("--gpu-id", help="A GPU ID to use. (applied only when a GPU is available)", 
                         type=int, default=0, metavar="")
 
     parser.add_argument("--plink-path", help="set path for PLINK binary exec manually.", metavar="", default=which("plink"))
@@ -166,6 +166,12 @@ if __name__ == "__main__":
     if jax_platform == 'gpu':
         gpu_id = os.environ["CUDA_VISIBLE_DEVICES"]
         logger_root.info(f"JAX with {jax_platform}(id={gpu_id})")
+
+    if jax_platform == "tpu":
+        # TPU 디바이스 리스트 가져오기
+        devices = jax.devices()
+        logger_root.info(f"JAX with {jax_platform} (Total cores: {len(devices)})")
+        logger_root.info(f"Device details: {devices}")
 
 
     t_start = datetime.now()
