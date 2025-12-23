@@ -3,6 +3,7 @@ from os.path import basename
 from shutil import which
 from datetime import datetime
 import logging
+import warnings
 from contextlib import redirect_stdout
 import argparse, textwrap
 
@@ -159,16 +160,26 @@ if __name__ == "__main__":
         # CPU만 주어졌을 때는 effect 없음.
 
     try:
-        jax_platform = jax.extend.backend.get_backend().platform # jax version >= 0.8
-    except (AttributeError, ImportError):
-        jax_platform = jax.lib.xla_bridge.get_backend().platform
-    
+        # 1. [미래 대비] JAX 0.8.0 이상을 위한 시도
+        # jax.extend 모듈이 확실히 존재할 때만 실행
+        import jax.extend.backend
+        jax_platform = jax.extend.backend.get_backend().platform
+
+    except (ImportError, AttributeError):
+        # 2. [현재 및 과거] JAX 0.7.x 이하 (Colab, Local 등)
+        # 작동은 하지만 경고가 뜨는 구버전 함수를 사용하되,
+        # 'DeprecationWarning'만 콕 집어서 무시(ignore)합니다.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=DeprecationWarning, module="jax.lib.xla_bridge")
+            jax_platform = jax.lib.xla_bridge.get_backend().platform
+
+        
     if jax_platform == "cpu":
         logger_root.info(f"JAX with {jax_platform}")
 
     if jax_platform == 'gpu':
         gpu_id = os.environ["CUDA_VISIBLE_DEVICES"]
-        logger_root.info(f"JAX with {jax_platform}(id={gpu_id})")
+        logger_root.info(f"JAX with {jax_platform} (id={gpu_id})")
 
     if jax_platform == "tpu":
         # TPU 디바이스 리스트 가져오기
