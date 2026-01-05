@@ -13,20 +13,42 @@ import pandas as pd
 import subprocess
 
 
+##### (Derepcated in 2026.01.05.) listdir()했을 때 ROUND_1 -> 2 -> 3 -> 10 ... 이런식으로 sorting되어 주어질거라는 보장이 없음 => 추후 함수에서 order mismatch발생.
+# def get_SWCA_Each_Round_Clumped_Files(_out_dir_SWCA):
+    
+#     p_clumped_file = re.compile(r'\.ROUND_(\d+)\..*\.clumped$')
+    
+#     l_files = os.listdir(_out_dir_SWCA)
+#     l_files_clumped = [_ for _ in l_files if bool(p_clumped_file.search(_))]
+#     l_files_round = [p_clumped_file.search(_).group(1) for _ in l_files_clumped]
+
+#     # display(l_files_clumped)
+#     # display(l_files_round)
+    
+#     # d_RETURN = {int(_ROUND): _fpath for _ROUND, _fpath in zip(l_files_round, map(lambda x: join(_out_dir_SWCA, x), l_files_clumped))}    
+#     d_RETURN = {f"ROUND_{_ROUND}": _fpath for _ROUND, _fpath in zip(l_files_round, map(lambda x: join(_out_dir_SWCA, x), l_files_clumped))}
+
+#     return d_RETURN
+
 
 def get_SWCA_Each_Round_Clumped_Files(_out_dir_SWCA):
     
     p_clumped_file = re.compile(r'\.ROUND_(\d+)\..*\.clumped$')
     
     l_files = os.listdir(_out_dir_SWCA)
+    
+    # 1. Clumped file filtering
     l_files_clumped = [_ for _ in l_files if bool(p_clumped_file.search(_))]
+    
+    # 2. [수정됨] Round 번호(int) 기준으로 정렬 (Sort by Round Number)
+    # 문자열 정렬이 아닌 숫자 크기 순 정렬을 보장합니다.
+    l_files_clumped.sort(key=lambda x: int(p_clumped_file.search(x).group(1)))
+    
+    # 3. Round Key 추출
     l_files_round = [p_clumped_file.search(_).group(1) for _ in l_files_clumped]
 
-    # display(l_files_clumped)
-    # display(l_files_round)
-    
-    # d_RETURN = {int(_ROUND): _fpath for _ROUND, _fpath in zip(l_files_round, map(lambda x: join(_out_dir_SWCA, x), l_files_clumped))}    
-    d_RETURN = {f"ROUND_{_ROUND}": _fpath for _ROUND, _fpath in zip(l_files_round, map(lambda x: join(_out_dir_SWCA, x), l_files_clumped))}
+    # 4. Dictionary 생성
+    d_RETURN = {f"ROUND_{_ROUND}": join(_out_dir_SWCA, _x) for _ROUND, _x in zip(l_files_round, l_files_clumped)}
 
     return d_RETURN
 
@@ -183,16 +205,23 @@ def __MAIN__(_fpath_SWCA_out_dict, _out_dir_clumped, _fpath_ref_bfile, _f_old=Fa
     - 여기, 차원이 너무 많아서 functional하게 좀 짜봐.
     """
 
-    
+    # Round 1 제외한 Dictionary 생성
     d_SWCA_out_2 = {k: v for i, (k, v) in enumerate(d_SWCA_out.items()) if i > 0}
 
 
-    ##### step1
-
+    ##### [수정됨] step1: zip 제거 및 Key 기반 접근 (Robust Iteration) (2026.01.05.)
     d_RETURN_step1 = {}
-    ToIter = zip(d_SWCA_out_2.items(), d_clumped_files.items())
+    
+    # zip(items, items) 대신 d_SWCA_out_2를 기준으로 순회
+    for i, (_ROUND_N, _l_markers) in enumerate(d_SWCA_out_2.items()):
 
-    for i, ((_ROUND_N, _l_markers), (_, _fpath_clumped)) in enumerate(ToIter):
+        # Key 매칭 확인 (Safety Check)
+        if _ROUND_N not in d_clumped_files:
+            print(f"[WARNING] Clumped file for {_ROUND_N} not found. Skipping...")
+            continue
+
+        # Key를 이용해 정확한 파일 경로 가져오기
+        _fpath_clumped = d_clumped_files[_ROUND_N]
 
         # print(f"=====[{i}] {_ROUND_N} / {_l_markers} / {_fpath_clumped}")
                 
@@ -201,18 +230,12 @@ def __MAIN__(_fpath_SWCA_out_dict, _out_dir_clumped, _fpath_ref_bfile, _f_old=Fa
 
         d_temp = {}
         for j, _marker in enumerate(_l_markers):
-
             d_clumped_markers = get_clumped_markers_of_a_marker_v2(_marker, df_temp_clumped)
-            # print(d_clumped_markers)
-
             d_temp.update(d_clumped_markers)
 
         d_RETURN_step1[_ROUND_N] = d_temp.copy()
 
-    # 결국 FP에 기반해서 사고하고 procedural하게 짜는게 짱인거 같다?
-
     # print(json.dumps(d_RETURN_step1, indent=4))
-
 
 
     ##### step2 / logic이 너무 복잡해져서 한번 끊고.
