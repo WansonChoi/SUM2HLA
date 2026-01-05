@@ -191,8 +191,23 @@ Detailed instructions are available in the Wiki section.
 
 ## (6) Summary Statistics from the Paper
 
-We have provided the output summary statistics from the main analyses presented in our manuscript in the `results/` directory. Please refer to `results/README.md` for detailed descriptions of the data.
+We provide the output summary statistics corresponding to the main analyses presented in our manuscript. These files are located in the [`results/`](results/) directory.
 
+### Directory Structure
+
+
+| Directory | Dataset / Analysis | Description | Related Figures/Tables |
+| :--- | :--- | :--- | :--- |
+| **`MVP`** | Million Veteran Program | HLA fine-mapping results for 131 traits. | Figure 1, Table 2 |
+| **`Consortium`** | Consortium-scale Summaries | HLA fine-mapping results for 9 autoimmune diseases. | Table 2 |
+| **`WTCCC`** | Wellcome Trust Case Control Consortium | HLA fine-mapping results and genotype-based gold-standard summary statistics for RA and T1D. | Figure 3 |
+| **`UKB_FG`** | UK Biobank & FinnGen | HLA fine-mapping results for 33 traits used in community detection (Figure 4), which include the 12 traits used for genotype-based validation (Table 1). | Table 1, Figure 4 |
+
+### File Naming Convention
+
+Files in these directories follow the naming patterns below:
+- `{Dataset}.{Trait}.AA+HLA.PP`
+- `{Dataset}.{Trait}.Z_imputed`
 
 
 ## (7) Citation
