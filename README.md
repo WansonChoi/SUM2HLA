@@ -185,7 +185,7 @@ For details on additional output files, please refer to the Wiki section.
 
 ## (5) How to create a reference dataset for SUM2HLA?
 
-Detailed instructions are available in the Wiki section.
+Detailed instructions are available in the Wiki section (https://github.com/WansonChoi/SUM2HLA/wiki/Constructing-the-T1DGC-Reference-LD-Matrix).
 
 
 
