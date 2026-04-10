@@ -229,7 +229,7 @@ class SWCA:
                     return bool(re.match(r"AA_(\w+)_(\d+)_", _x))
                 
                 if _x.startswith("HLA"):
-                    return True
+                    return bool(re.match(r'^HLA_\w+_\d{4}$', _x))
                 
                 return False
             
