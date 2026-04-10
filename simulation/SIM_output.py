@@ -636,3 +636,158 @@ def concat_SIM_output_v2(_d_SSFN: dict, _col_output:str,
 
 
     return df_RETURN
+
+
+
+
+
+"""
+(2025.12.27. 긴급하게 simulation 재채점 및 figure수정.
+
+
+"""
+
+import src.SUM2HLA_PostCalc_Cov as SUM2HLA_PostCalc_Cov
+
+
+def make_SSFN2_scenario1(_l_ncp = [6.0, 8.0, 10.0, 20.0, 30.0]):
+
+    """
+    SSFN의 fpath_OUT를 out_dir만 바꿔서 fpath_OUT2를 만들고, SSFN2로 export함.
+    다음 단계에서 SSFN2로 작업할거임.
+    
+    """
+
+    d_SSFN_HLA_DRB1_0401 = {
+        _ncp: f"/data02/wschoi/_hCAVIAR_v2/20250920_eval_sim_v4_3/SIM.HLA_DRB1_0401.ncp1_{_ncp:+}.SSFN" for _ncp in _l_ncp # 그냥 하드코딩한다.
+    }
+
+    d_df_SSFN_HLA_DRB1_0401 = {
+        _ncp: pd.read_csv(_fpath, sep='\t', header=0, nrows=None) for _ncp, _fpath in d_SSFN_HLA_DRB1_0401.items()
+    }
+
+
+
+    # d_RETURN = {}
+
+    for _ncp, _df in d_df_SSFN_HLA_DRB1_0401.items():
+
+        _df = _df.copy()
+
+        _df = pd.concat([_df, _df['fpath_OUT'].str.replace("OUT", "OUT2").rename("fpath_OUT2")], axis=1)
+
+        OUT = f"/data02/wschoi/_hCAVIAR_v2/20250920_eval_sim_v4_3/SIM.HLA_DRB1_0401.ncp1_{_ncp:+}.SSFN2"
+        print(OUT)
+        _df.to_csv(OUT, sep='\t', header=True, index=False, na_rep="NA")
+
+        
+
+
+    return 0
+
+
+
+##### 1700개짜리 AA+HLA.PP파일을 1600 AA+HLA.PP파일로 변환하기.
+
+
+def modify_PP_from_1700_to_1600(_fpath_AA_HLA):
+    
+    df_PP_AA_HLA = pd.read_csv(_fpath_AA_HLA, sep='\t', header=0)
+    
+    l_ToExtract = ['SNP', 'LL+Lprior']
+    df_ToExtract = df_PP_AA_HLA[l_ToExtract]
+    
+    df_PP_AA_HLA_recalc = SUM2HLA_PostCalc_Cov.postprepr_LL(df_ToExtract, _l_type=('AA+HLA',))
+    
+    
+    return df_PP_AA_HLA_recalc['AA+HLA']
+
+
+
+def iterate_modify_PP_from_1700_to_1600(_l_ncp = [6.0, 8.0, 10.0, 20.0, 30.0]):
+
+
+    for i, _ncp in enumerate(_l_ncp):
+
+        print(f"\n===[{i}]: ncp {_ncp}")
+
+        fpath_SSFN2 = f"/data02/wschoi/_hCAVIAR_v2/20250920_eval_sim_v4_3/SIM.HLA_DRB1_0401.ncp1_{_ncp:+}.SSFN2"
+
+        df_SSFN2 = pd.read_csv(fpath_SSFN2, sep='\t', header=0)
+
+
+        for j, (_fpath_OUT, _fpath_OUT2) in enumerate(df_SSFN2[['fpath_OUT', 'fpath_OUT2']].itertuples(name=None, index=False)):
+
+            # print(f"=====[{j}]: {_fpath_OUT2}")
+
+            fpath_AA_HLA = _fpath_OUT + ".AA+HLA.PP" # from fpath_OUT
+            OUT_AA_HLA_recalc = _fpath_OUT2 + ".from_1700_to_1600.AA+HLA.PP" # to fpath_OUT2
+
+            if os.path.exists(fpath_AA_HLA):
+    
+                print(f"=====[{j}]: {OUT_AA_HLA_recalc}")
+
+                df_PP_AA_HLA_recalc = modify_PP_from_1700_to_1600(fpath_AA_HLA)
+
+                # print(OUT_AA_HLA_recalc)
+                df_PP_AA_HLA_recalc.to_csv(OUT_AA_HLA_recalc, sep='\t', header=True, index=False, na_rep="NA")
+
+
+            # if j >= 100: break
+
+
+    return 0
+
+
+
+##### 1700개짜리 ma파일을 1600 ma파일로 변환하기.
+
+
+
+def modify_ma_from_1700_to_1600(_fpath_ma):
+
+    df_ma = pd.read_csv(_fpath_ma, sep='\t', header=0)
+
+    f_AA_HLA_1600 = df_ma['SNP'].map(lambda x: Util.mask_codingAA_and_HLA(x)).rename("flag_codingAA_HLA")
+
+
+    df_ma = df_ma[f_AA_HLA_1600]
+
+    return df_ma
+
+
+
+def iterate_modify_ma_from_1700_to_1600(_l_ncp = [6.0, 8.0, 10.0, 20.0, 30.0]):
+
+    for i, _ncp in enumerate(_l_ncp):
+
+        print(f"\n===[{i}]: ncp {_ncp}")
+
+        fpath_SSFN2 = f"/data02/wschoi/_hCAVIAR_v2/20250920_eval_sim_v4_3/SIM.HLA_DRB1_0401.ncp1_{_ncp:+}.SSFN2"
+
+        df_SSFN2 = pd.read_csv(fpath_SSFN2, sep='\t', header=0)
+
+
+        for j, (_fpath_OUT, _fpath_OUT2) in enumerate(df_SSFN2[['fpath_OUT', 'fpath_OUT2']].itertuples(name=None, index=False)):
+
+            # print(f"=====[{j}]: {_fpath_OUT2}")
+
+            fpath_ma_1700 = _fpath_OUT + ".ma" # from fpath_OUT
+            OUT_ma_1600 = _fpath_OUT2 + ".from_1700_to_1600.ma" # to fpath_OUT2
+
+
+            if os.path.exists(fpath_ma_1700):
+    
+                print(f"=====[{j}]: {OUT_ma_1600}")
+
+                df_PP_AA_HLA_recalc = modify_ma_from_1700_to_1600(fpath_ma_1700)
+
+                # print(OUT_ma_1600)
+                df_PP_AA_HLA_recalc.to_csv(OUT_ma_1600, sep='\t', header=True, index=False, na_rep="NA")
+
+
+            # if j >= 20: break
+
+
+
+    return 0

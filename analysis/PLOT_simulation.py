@@ -62,7 +62,7 @@ class plot_scenario_1():
         self.df_RRC_PP_Pval.plot.bar(ax = _ax, width=0.6, color=[_color_PP, _color_Pval])
 
         # _ax.set_title("Scenario 1", fontsize=16)
-        _ax.set_xlabel("True assciation z-score (of the causal HLA variant)")
+        _ax.set_xlabel("True association z-score (of the causal HLA variant)")
         # _ax.set_xlabel("True assciation z-score\n(of the causal HLA variant)")
         _ax.set_ylabel("Recall Rate")
 
@@ -133,7 +133,7 @@ class plot_scenario_1():
     
 
 
-    def plot_scenario1_seaborn(self, _ax, _palette):
+    def plot_scenario1_seaborn(self, _ax, _palette): # deprecated
 
         df_long = self.df_RRC_PP_Pval.reset_index().melt(
             id_vars='ncp',
@@ -152,7 +152,7 @@ class plot_scenario_1():
 
 
 
-    def run_seaborn(self, _style="white", _context="paper", _palette="colorblind"):
+    def run_seaborn(self, _style="white", _context="paper", _palette="colorblind"): # deprecated
 
         with mpl.rc_context():
 
@@ -195,7 +195,7 @@ class plot_scenario_2():
             # bar width를 manually 조정해줘야 함.
 
         # _ax.set_title("Scenario 2", fontsize=16)
-        _ax.set_xlabel("True assciation z-score (of the independent HLA variant)")
+        _ax.set_xlabel("True association z-score (of the independent HLA variant)")
         # _ax.set_xlabel("True assciation z-score\n(of the independent HLA variant)")
         _ax.set_ylabel("Recall Rate")
 

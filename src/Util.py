@@ -8,6 +8,18 @@ from datetime import datetime
 
 
 
+def mask_codingAA_and_HLA(_x):
+    
+    if _x.startswith("AA"):
+        return bool(re.match(r"AA_(\w+)_(\d+)_", _x))
+    
+    if _x.startswith("HLA"):
+        return True
+    
+    return False
+
+
+
 def is_HLA_locus(_sr_markers) -> pd.Series:
     
     """
@@ -179,16 +191,6 @@ def get_N_of_ss(_ss):
     return N_sample_size
 
 
-
-def mask_codingAA_and_HLA(_x):
-    
-    if _x.startswith("AA"):
-        return bool(re.match(r"AA_(\w+)_(\d+)_", _x))
-    
-    if _x.startswith("HLA"):
-        return True
-    
-    return False
 
 
 
