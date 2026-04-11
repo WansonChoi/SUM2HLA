@@ -12,11 +12,9 @@ import json
 
 import pandas as pd
 import numpy as np
-import jax.numpy as jnp
-from jax import jit, vmap, lax
 
 import src.Util as mod_Util
-from src.SUM2HLA_PostCalc_Cov import yield_configure_batch, generate_LD_matrices_jax, calc_LL_given_batch_jax, postprepr_LL
+from src.SUM2HLA_PostCalc_Cov import postprepr_LL
 
 from datetime import datetime
 
@@ -43,8 +41,6 @@ def make_cma_to_sumstats3(_fpath_cma, _f_onlySNPs=False):
 def __MAIN__postCalc_SWCA(_fpath_COJOsummary, _fpath_LDmatrix,
                           _batch_size=30, _gamma=0.01, _ncp=5.2, _N_causal=1):
 
-    # (2025.04.17.) main postCalc의 wrapper도 이런식으로 바뀌었으면 좋겠음.
-
     ##### (0) load data
 
     df_LDmatrix = pd.read_csv(_fpath_LDmatrix, sep='\t', header=0) \
@@ -60,91 +56,30 @@ def __MAIN__postCalc_SWCA(_fpath_COJOsummary, _fpath_LDmatrix,
                           .loc[df_LDmatrix.columns.to_series()]  ### (***; 매우 중요) LD matrix의 marker순서로 match시킴.
     ## 앞서 `_fpath_LDmatrix`를 `_fpath_COJOsummary`를 바탕으로 match시켜서 전처리했기 때문에 `.loc[]`만 활용해도 됨.
 
-    # print(df_LDmatrix)
-    # print(sr_COJO_summary)
+
+
+    ##### (1) Rank-1 optimized LL computation (N_causal=1)
+    #
+    # l_ix_SNPs=None (all K markers as candidates) → v_c = R[:, c]
+    # R^{-1} @ v_c = R^{-1} @ R[:, c] = e_c  →  alpha_c = R[c,c],  beta_c = Z[c]
+    #
+    # arr_PIP_acc[c] = LL_1(c) - LL_0 + Lprior
+    #               = -0.5*log(denom_c) + 0.5*ncp*Z[c]^2/denom_c + Lprior
+    # where denom_c = 1 + ncp * R[c, c]
+
+    K      = df_LDmatrix.shape[0]
+    Z      = sr_COJO_summary.values                           # (K,)
+    R      = df_LDmatrix.values                               # (K, K)
+    Lprior = np.log(_gamma) + (K - 1) * np.log(1.0 - _gamma) # N_causal=1
+
+    diag_R      = np.diag(R)                                  # (K,)
+    denom       = np.maximum(1.0 + _ncp * diag_R, 1e-12)     # (K,)
+    arr_PIP_acc = -0.5 * np.log(denom) + 0.5 * _ncp * (Z ** 2) / denom + Lprior  # (K,)
 
 
 
-    ##### (1) main variables
+    ##### (2) RETURN
 
-    ### (1-1) LL_0
-    eigenvalues_LDmatrix = jnp.linalg.svd(df_LDmatrix.values, compute_uv=False)  # only eigenvalues, not with eigenvectors
-    term2_LDmatrix = -0.5 * jnp.sum(jnp.log(eigenvalues_LDmatrix))
-    _LL_0 = term2_LDmatrix - 0.5 * (sr_COJO_summary.values.T @ (jnp.linalg.solve(df_LDmatrix.values, sr_COJO_summary.values)))  # term2 + term3
-
-    ### (1-2) Lprior
-    M = df_LDmatrix.shape[0]
-    Lprior = _N_causal * np.log(_gamma) + (M - _N_causal) * np.log(1 - _gamma)
-    # Lprior는 N_causal이 given되는 지금 계산하는게 나을 듯.
-
-    ### (1-3) output
-    arr_PIP_acc = np.zeros(M)
-    acc_LL_N_causal = 0.0  # `N_causal`이 주어졌을 때의 LL 누적. 나중에 N_causal이 몇일때 가장 LL이 높게 나오는지도 알고싶음.
-
-
-
-    ##### (2) Main iteration
-
-    iter_batch_configures = yield_configure_batch(M, _N_causal, _batch_size, _f_as_list=False)
-
-    for i, _batch_configures in enumerate(iter_batch_configures):
-
-        if i % 100 == 0:
-            print("=====[{}]: {}-th batch / First 5 items: {} ({})".format(i, i, _batch_configures[:5], datetime.now()))
-            # print("First 5 items: {}".format(_batch_configures[:5]))
-            # display(_batch_configures)
-
-        ### (2-1) calc LL for the configure batch.
-
-        GWAS_summary_jax = jnp.array(sr_COJO_summary.values)
-
-        # ✅ (1) 벡터 연산으로 LD matrices 생성
-        t_start_1 = datetime.now()
-
-        _LDmatrix_jax = generate_LD_matrices_jax(
-            jnp.array(_batch_configures), jnp.array(df_LDmatrix.values), None, _ncp
-        )
-            # None을 주어 SNPs들만 extraction 하지 않음. (<=> the main fine-mapping)
-
-        # display(_LDmatrix_jax[:10, :10])
-
-        # print("✅ (1) LD matrices 생성 (R + R @ diagC @ R) && Subset: {}".format(datetime.now() - t_start_1))
-
-        # ✅ (2) LL 계산.
-        t_start_2 = datetime.now()
-
-        l_LL_batch = calc_LL_given_batch_jax(GWAS_summary_jax, _LDmatrix_jax, Lprior, _LL_0, _ncp=_ncp)
-        # display(l_LL_batch)
-
-        # print("✅ (2) LL 계산: {}".format(datetime.now() - t_start_2))
-
-        # print("Total Time of this batch: {}".format(datetime.now() - t_start_1))
-
-        ### (2-2) accumulation for PIP.
-        for j, (_configure, _LL) in enumerate(zip(_batch_configures, l_LL_batch)):
-
-            # print("===[{}]: {} / {}".format(j, _configure, _LL))
-
-            for _idx_SNP in _configure:
-                # print(_idx_SNP)
-
-                arr_PIP_acc[_idx_SNP] += _LL
-
-        # display(arr_PIP_acc)
-
-        ### (2-3) acc for the prob. of `N_causal`
-        acc_LL_N_causal += np.sum(l_LL_batch)
-
-        # display(arr_PIP_acc[:10])
-        # display(acc_LL_N_causal)
-
-        # if i >= 1: break
-
-
-
-    ##### (3) RETURN
-
-    ## 당장은 `arr_PIP_acc`만 필요함.
     df_PP = pd.DataFrame(
         {
             "SNP": df_LDmatrix.columns.tolist(),
