@@ -11,7 +11,7 @@ from shutil import which
 import src.INPUT_prepr as INPUT_prepr
 from src.INPUT_LDmatrix import INPUT_LDmatrix
 from src.INPUT_GWAS_summary import INPUT_GWAS_summary
-import src.SUM2HLA_PostCalc_Cov as mod_PostCal_Cov
+import src.SUM2HLA_PostCalc_Cov_v2 as mod_PostCal_Cov  # v2: rank-1 optimized (2026-04-09)
 import src.SWCA as SWCA
 
 import logging
@@ -85,7 +85,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
         ## Types of markers to calculate PP.
         # self.l_type = ('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP', 'AA+HLA')
-        self.l_type = ('AA+HLA',)
+        self.l_type = ('AA+HLA', 'HLA', 'AA')
 
 
         ### SWCR
