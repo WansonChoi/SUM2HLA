@@ -204,19 +204,31 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
         
         ##### Postprocessing
         print("\n\n==========[2]: postprocessing and export")
+
+        # Load bim for A1/A2 lookup
+        df_bim = pd.read_csv(self.fpath_LD_SNP_HLA + ".bim", sep=r'\s+', header=None,
+                             names=['CHR', 'SNP', 'CM', 'BP', 'A1', 'A2'], dtype=str)
+        d_A1 = df_bim.set_index('SNP')['A1']
+        d_A2 = df_bim.set_index('SNP')['A2']
+
         for _N_causal in range(1, self.N_causal + 1):
-            
+
             df_PP = pd.DataFrame({
                 "SNP": self.LDmatrix.df_LD.columns,
                 "LL+Lprior": self.OUT_PIP[_N_causal]
             })
 
             # df_PP.to_csv(self.out_prefix + ".before_postprepr.txt", sep='\t', header=True, index=False, na_rep="NA")
-    
+
             self.OUT_PIP_PP[_N_causal] = \
                 mod_PostCal_Cov.postprepr_LL(df_PP, _l_type=self.l_type) # 여기서 return되는건 DataFrame의 dictionary임.
 
             for _type, _df_PP in self.OUT_PIP_PP[_N_causal].items():
+
+                _df_PP = _df_PP.copy()
+                pp_loc = _df_PP.columns.get_loc('PP')
+                _df_PP.insert(pp_loc, 'A2', _df_PP['SNP'].map(d_A2))
+                _df_PP.insert(pp_loc, 'A1', _df_PP['SNP'].map(d_A1))
 
                 out_temp = self.out_prefix + ".{}.PP".format(_type)
                 _df_PP.to_csv(out_temp, sep='\t', header=True, index=False, na_rep="NA")
