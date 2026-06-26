@@ -85,7 +85,7 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
         ## Types of markers to calculate PP.
         # self.l_type = ('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP', 'AA+HLA')
-        self.l_type = ('AA+HLA', 'HLA', 'AA')
+        self.l_type = ('AA+HLA', 'HLA', 'AA', 'HLAh', 'HLA+HLAh', 'AA+HLA+HLAh')
 
 
         ### SWCR
@@ -224,6 +224,9 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
                 mod_PostCal_Cov.postprepr_LL(df_PP, _l_type=self.l_type) # 여기서 return되는건 DataFrame의 dictionary임.
 
             for _type, _df_PP in self.OUT_PIP_PP[_N_causal].items():
+
+                if _df_PP is None:  # absent marker-type group (e.g. HLAh on a panel w/o HLAh markers)
+                    continue
 
                 _df_PP = _df_PP.copy()
                 pp_loc = _df_PP.columns.get_loc('PP')

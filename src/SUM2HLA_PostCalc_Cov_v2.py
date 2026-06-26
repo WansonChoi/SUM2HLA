@@ -78,6 +78,7 @@ def postprepr_LL(_df_result, _rho=0.99, _col_CredibleSet="CredibleSet(99%)",
     df_result_sort = _df_result.sort_values("LL+Lprior", ascending=False)
 
     f_HLA      = df_result_sort['SNP'].str.match(r'^HLA_\w+_\d{4}$')
+    f_HLAh     = df_result_sort['SNP'].str.startswith("HLAh_")  # HLA-haplotype markers
     f_intraSNP = df_result_sort['SNP'] \
                      .map(lambda x: re.match(r'^SNP_(\S+)_(\d+)', x)) \
                      .map(lambda x: bool(x))
@@ -86,22 +87,25 @@ def postprepr_LL(_df_result, _rho=0.99, _col_CredibleSet="CredibleSet(99%)",
     else:
         f_AA = df_result_sort['SNP'].str.startswith("AA")
 
-    f_HLAtype = f_HLA | f_AA | f_intraSNP
+    f_HLAtype = f_HLA | f_AA | f_intraSNP | f_HLAh
     f_SNP     = ~f_HLAtype
     f_whole   = f_SNP | f_HLAtype
     f_AA_HLA  = f_AA | f_HLA
 
     d_flag_target_group = {
-        "whole":    f_whole,
-        "SNP":      f_SNP,
-        "HLAtype":  f_HLAtype,
-        "HLA":      f_HLA,
-        "AA":       f_AA,
-        "intraSNP": f_intraSNP,
-        "AA+HLA":   f_AA_HLA,
+        "whole":        f_whole,
+        "SNP":          f_SNP,
+        "HLAtype":      f_HLAtype,
+        "HLA":          f_HLA,
+        "AA":           f_AA,
+        "intraSNP":     f_intraSNP,
+        "AA+HLA":       f_AA_HLA,
+        "HLAh":         f_HLAh,
+        "HLA+HLAh":     f_HLA | f_HLAh,
+        "AA+HLA+HLAh":  f_AA | f_HLA | f_HLAh,
     }
 
-    if 0 < len(_l_type) < 6:
+    if len(_l_type) > 0:
         d_flag_target_group = {k: v for k, v in d_flag_target_group.items() if k in _l_type}
 
     def postprepr_LL_subgroup(_df_sub, _rho):
