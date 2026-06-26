@@ -411,8 +411,53 @@ def prepare_inputs(_fPath_ss_matched:str, _fPath_clumped:str, _d_fPath_LDcurated
     
     
     
+########## (optional) pure-Python summary-based clumper ##########
+## Replicates PLINK 1.9 `--clump` from summary stats + a precomputed EM/haplotype
+## r^2 matrix (see /data02/wschoi/_hCAVIAR_v2/20260614_clumping_ss). Used only when
+## the env var SUM2HLA_PY_CLUMP is set; PLINK remains the default path. This lets us
+## test the summary-based clumping without removing the PLINK dependency.
+##   SUM2HLA_PY_CLUMP       : enable the Python clumper when set (non-empty).
+##   SUM2HLA_PY_CLUMP_DIR   : dir holding clump_from_ss.py + the EM r^2 .npy
+##                            (default: the 20260614_clumping_ss working dir).
+##   SUM2HLA_PY_CLUMP_NPY   : path to the panel-wide EM r^2 .npy (default: REF_T1DGC).
+def _run_PY_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix):
+
+    CLUMP_DIR = os.environ.get(
+        "SUM2HLA_PY_CLUMP_DIR", "/data02/wschoi/_hCAVIAR_v2/20260614_clumping_ss")
+    PANEL_NPY = os.environ.get(
+        "SUM2HLA_PY_CLUMP_NPY",
+        os.path.join(CLUMP_DIR, "LD.REF_T1DGC.hg19.SNP+HLA.EM_haplotype_r2.npy"))
+
+    if CLUMP_DIR not in sys.path:
+        sys.path.insert(0, CLUMP_DIR)
+    from clump_from_ss import clump, write_clumped
+
+    ## panel order (== row/col order of the EM r^2 matrix) from the .bim
+    df_bim = pd.read_csv(
+        _fpath_LD_SNP_HLA + ".bim", sep='\t', header=None,
+        names=['CHR', 'SNP', 'GD', 'BP', 'A1', 'A2'])
+    panel_snps = df_bim['SNP'].tolist()
+    snp2gi = {s: i for i, s in enumerate(panel_snps)}
+
+    ## subset the panel EM r^2 matrix to the ToClump SNPs, IN PANEL ORDER
+    Rfull = np.load(PANEL_NPY, mmap_mode='r')
+    tc = pd.read_csv(_fpath_ToClump, sep='\t').dropna(subset=['P']).reset_index(drop=True)
+    need = set(tc['SNP'])
+    keep_idx = [snp2gi[s] for s in panel_snps if s in need]   # panel order
+    snps = [panel_snps[i] for i in keep_idx]
+    R2 = np.asarray(Rfull[np.ix_(keep_idx, keep_idx)])
+    p_map = dict(zip(tc['SNP'], tc['P']))
+    P = np.array([p_map[s] for s in snps], float)
+    BP = df_bim['BP'].values[keep_idx].astype(float)
+
+    clumps = clump(snps, P, BP, R2)
+    out_clumped = _out_prefix + ".clumped"
+    write_clumped(clumps, snps, P, BP, df_bim, out_clumped)
+    return out_clumped
+
+
 ########## main wrapper ##########
-def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA, 
+def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
              _out_prefix_ss, _out_prefix_LD,
              _f_do_clump = True,
              _plink = "~/miniconda3/bin/plink"):
@@ -462,6 +507,11 @@ def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
 
         ### run the PLINK clumping
         def run_PLINK_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix, _plink):
+
+            ### (optional) use the pure-Python summary-based clumper instead of PLINK.
+            ### Gated by env var; PLINK is still the default. See `_run_PY_clump` above.
+            if os.environ.get("SUM2HLA_PY_CLUMP"):
+                return _run_PY_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix)
 
             cmd = [
                 _plink,
