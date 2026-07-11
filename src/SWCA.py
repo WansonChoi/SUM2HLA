@@ -73,7 +73,7 @@ def find_input_items(_out_prefix):
     else:
         _fpath_sumstats3 = join(out_dir, l_temp[0])
 
-    l_temp = [_ for _ in l_items if _.endswith(".whole.PP")]
+    l_temp = [_ for _ in l_items if _.endswith(".whole.APP")]
     if len(l_temp) == 0:
         print("No whole PP")
     else:
@@ -386,11 +386,27 @@ class SWCA:
         일부러 output dictionary를 transform하는 형태로 구현했음.
         """
 
+        ### Genotype-free r/r^2 via a precomputed signed-r matrix lookup is the DEFAULT.
+        ### Set SUM2HLA_USE_PLINK to force the legacy plink --r/--r2 --bfile path.
+        ### The SWCA.dict r/r^2 is report/scoring-only, so the DEFAULT source is the shipped
+        ### PSD-clipped ".NoNA.PSD.ld" (~1e-3 vs plink; signals are identical either way).
+        ### For EXACT plink reproduction (e.g. re-scoring simulations at r2>=0.99), point
+        ### SUM2HLA_SWCA_SIGNEDR_LD at the RAW `plink --r square` matrix ("LD.<ref>.ld").
+        if not os.environ.get("SUM2HLA_USE_PLINK"):
+            import src.SWCA_calc_r_r2_v2 as SWCA_calc_r_r2_v2
+            signed_r_ld = os.environ.get(
+                "SUM2HLA_SWCA_SIGNEDR_LD", self.fpath_ref_bfile + ".NoNA.PSD.ld")
+            self.d_conditions_clumped, self.d_conditions_clumped_r2 = SWCA_calc_r_r2_v2.__MAIN__(
+                self.d_conditions, dirname(self.out_prefix_SWCA),
+                signed_r_ld, self.fpath_ref_bfile + ".bim"
+            )
+            return 0
+
         self.d_conditions_clumped, self.d_conditions_clumped_r2 = SWCA_calc_r_r2.__MAIN__(
             self.d_conditions, dirname(self.out_prefix_SWCA), self.fpath_ref_bfile,
             _plink = self.plink
         )
-        
+
         return 0
 
 

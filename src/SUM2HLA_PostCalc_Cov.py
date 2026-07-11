@@ -418,13 +418,13 @@ def calc_PP(_sr_LL_prior):
 
 
     ## log Posterior prob.
-    sr_logPP = (_sr_LL_prior - log_sum_exp).rename("logPP")
+    sr_logPP = (_sr_LL_prior - log_sum_exp).rename("logAPP")
     # print("sr_logPP: ")
     # display(sr_logPP)
 
 
     ## Posterior prob.
-    sr_PP = pd.Series( np.exp(sr_logPP), name='PP', index=_sr_LL_prior.index)
+    sr_PP = pd.Series( np.exp(sr_logPP), name='APP', index=_sr_LL_prior.index)
     # print("sr_PP: ")
     # display(sr_PP)
 
@@ -584,7 +584,7 @@ def postprepr_LL(_df_result, _rho=0.99, _col_CredibleSet="CredibleSet(99%)",
                 sr_logPP,
             ],axis=1
         ) \
-            .loc[:, ['rank', 'rank_p', 'SNP', 'PP', _col_CredibleSet, 'LL+Lprior', 'LL+Lprior_diff', 'LL+Lprior_diff_acc', 'logPP']]
+            .loc[:, ['rank', 'rank_p', 'SNP', 'APP', _col_CredibleSet, 'LL+Lprior', 'LL+Lprior_diff', 'LL+Lprior_diff_acc', 'logAPP']]
 
 
         return df_RETURN

@@ -35,28 +35,40 @@ def check_sumstats(_sumstats) -> bool:
 
 def check_reference_data(_ref) -> bool:
 
-    ### Existence - 1: genotype files of (1) bed, (2) bim, and (3) fam
-    BED = _ref + ".bed"
+    ### Existence - 1: always-required files (.bim, .FRQ.frq)
     BIM = _ref + ".bim"
-    FAM = _ref + ".fam"
     FRQ = _ref + ".FRQ.frq"
-
-    if not exists(BED):
-        raise FileNotFoundError(f'Reference BED file not found: {BED}')
 
     if not exists(BIM):
         raise FileNotFoundError(f'Reference BIM file not found: {BIM}')
-
-    if not exists(FAM):
-        raise FileNotFoundError(f'Reference FAM file not found: {FAM}')
 
     if not exists(FRQ):
         raise FileNotFoundError(f'Reference FRQ file not found: {FRQ}')
 
 
-    ### Existence - 2: LD file
+    ### Existence - 2: LD matrix (fine-mapping; also the signed-r source for SWCA r/r^2)
     if not (exists(_ref + ".NoNA.PSD.ld") or exists(_ref + ".NoNA.PSD.ld.gz")):
         raise FileNotFoundError(f"Reference LD file not found: {_ref + '.NoNA.PSD.ld'}")
+
+
+    ### Existence - 3: clumping backend
+    ###  - DEFAULT (genotype-free, summary-based): needs the precomputed EM/haplotype r^2 matrix.
+    ###  - legacy PLINK genotype path (env SUM2HLA_USE_PLINK): needs the .bed/.fam genotype instead.
+    if os.environ.get("SUM2HLA_USE_PLINK"):
+        BED = _ref + ".bed"
+        FAM = _ref + ".fam"
+        if not exists(BED):
+            raise FileNotFoundError(f'Reference BED file not found: {BED}')
+        if not exists(FAM):
+            raise FileNotFoundError(f'Reference FAM file not found: {FAM}')
+    else:
+        EM_NPY = os.environ.get("SUM2HLA_PY_CLUMP_NPY", _ref + ".EM_haplotype_r2.npy")
+        if not exists(EM_NPY):
+            raise FileNotFoundError(
+                f"Reference EM/haplotype r^2 matrix not found: {EM_NPY}\n"
+                f"  It is required for the (default) genotype-free summary-based clumping.\n"
+                f"  Provide it at '<ref>.EM_haplotype_r2.npy', or set SUM2HLA_PY_CLUMP_NPY to its path,\n"
+                f"  or set SUM2HLA_USE_PLINK=1 to use the legacy PLINK genotype-based clumping instead.")
 
     return True
 

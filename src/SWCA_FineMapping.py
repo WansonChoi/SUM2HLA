@@ -149,7 +149,7 @@ def iterate_BayesianFineMapping(_df_ma_init, _cond_init,
             l_condition_next = list(np.unique(l_condition_next))
             """
             (ex)
-             	rank 	index 	SNP 	LL+Lprior 	LL+Lprior_diff 	LL+Lprior_diff_acc 	logPP 	PP 	CredibleSet
+             	rank 	index 	SNP 	LL+Lprior 	LL+Lprior_diff 	LL+Lprior_diff_acc 	logAPP 	APP 	CredibleSet
             0 	0 	62 	AA_B_97_31432180_RT 	30.852898 	0.000000 	0.000000 	-0.367145 	0.692709 	True
             1 	1 	9 	AA_A_62_30018696_QR 	29.544792 	1.308105 	1.308105 	-1.675250 	0.187261 	True
             2 	2 	63 	AA_B_97_31432180_SRT 	28.877922 	0.666870 	1.974976 	-2.342120 	0.096124 	True            

@@ -4,9 +4,9 @@
 
 **SUM2HLA** performs __Human Leukocyte Antigen (HLA) fine-mapping__ using only GWAS summary statistics of a target disease, eliminating the need for individual-level genotype data.
 
-SUM2HLA enhances analytical resolution by calculating the **posterior probability (PP)** of causality for each HLA variant—including both HLA alleles and amino acid residues—by leveraging joint-association information, which offers higher resolution than marginal p-values.
+SUM2HLA enhances analytical resolution by calculating the **Approximated Posterior Probability (APP)** of causality for each HLA variant—including both HLA alleles and amino acid residues—by leveraging joint-association information, which offers higher resolution than marginal p-values.
 
-Using the GWAS summary statistics of the target disease and a reference LD matrix, SUM2HLA identifies putative causal HLA loci with the highest PP and performs **Stepwise Conditional Analysis (SWCA)** to detect independent HLA loci.
+Using the GWAS summary statistics of the target disease and a reference LD matrix, SUM2HLA identifies putative causal HLA loci with the highest APP and performs **Stepwise Conditional Analysis (SWCA)** to detect independent HLA loci.
 
 
 
@@ -124,11 +124,11 @@ conda deactivate
 
 SUM2HLA generates two main output files:
 
-### (4-1) The `*.AA+HLA.PP` File
+### (4-1) The `*.AA+HLA.APP` File
 
-This file provides the causal Posterior Probabilities (PP) for each HLA variant in the target disease. It contains $h$ rows (corresponding to the number of HLA variants in the reference dataset; e.g., 1,573 for the 1kG EUR reference) and 11 columns. The file is sorted in descending order by PP.
+This file provides the causal posterior probabilities (reported in the `APP` column) for each HLA variant in the target disease. It contains $h$ rows (corresponding to the number of HLA variants in the reference dataset; e.g., 1,573 for the 1kG EUR reference) and 11 columns. The file is sorted in descending order by `APP`.
 
-| rank | rank_p | SNP | A1 | A2 | PP | CredibleSet(99%) | LL+Lprior | LL+Lprior_diff | LL+Lprior_diff_acc | logPP |
+| rank | rank_p | SNP | A1 | A2 | APP | CredibleSet(99%) | LL+Lprior | LL+Lprior_diff | LL+Lprior_diff_acc | logAPP |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | 0.0 | HLA_DRB1_0401 | P | A | 0.9986325167877164 | True | 267.54632568359375 | 0.0 | 0.0 | -0.0013684190707294874 |
 | 2 | 0.0006357... | AA_DRB1_120_32657518_S | P | A | 0.0013124103068841014 | False | 260.91180419921875 | 6.634521484375 | 6.634521484375 | -6.6358899034457295 |
@@ -140,13 +140,13 @@ Column Descriptions:
 1. SNP: The marker label for each HLA variant.
 2. A1: The effect allele, as defined in the reference panel (`.bim` file, 5th column).
 3. A2: The non-effect allele, as defined in the reference panel (`.bim` file, 6th column).
-4. PP: The causal posterior probability.
-5. CredibleSet(99%): Indicates whether the variant is included in the 99% credible set (accumulated top PPs reaching 0.99).
-6. rank: The rank of the variant (The variant with the highest PP has a rank of 1).
+4. APP: The causal posterior probability.
+5. CredibleSet(99%): Indicates whether the variant is included in the 99% credible set (accumulated top APPs reaching 0.99).
+6. rank: The rank of the variant (The variant with the highest APP has a rank of 1).
 7. rank_p: The percentile rank among all $h$ HLA variants provided by the reference.
-	- Note: The highest PP variant has a rank_p of 0.0 (calculated as $0 / h$). The 2nd highest is $1 / h$.
-8. LL+Lprior: The sum of the log-likelihood (calculated using observed association z-scores and the reference LD matrix via multivariate normal distribution) and the log-prior probability. This value is used to calculate logPP.
-9. logPP: The natural logarithm of the posterior probability, derived from the LL+Lprior column before conversion to the final PP.
+	- Note: The highest APP variant has a rank_p of 0.0 (calculated as $0 / h$). The 2nd highest is $1 / h$.
+8. LL+Lprior: The sum of the log-likelihood (calculated using observed association z-scores and the reference LD matrix via multivariate normal distribution) and the log-prior probability. This value is used to calculate logAPP.
+9. logAPP: The natural logarithm of the posterior probability, derived from the LL+Lprior column before conversion to the final APP.
 10. LL+Lprior_diff: The difference in LL+Lprior values between two adjacent variants in the sorted list.
 11. LL+Lprior_diff_acc: The difference in LL+Lprior values between the top-ranked variant (rank 1) and the current variant (rank N).
 
@@ -173,7 +173,7 @@ This file contains the results of the Stepwise Conditional Analysis (SWCA) in JS
             },
 ```
 
-- ROUND_1: Represents the top HLA variant identified with the highest PP.
+- ROUND_1: Represents the top HLA variant identified with the highest APP.
 - ROUND_2 (and subsequent rounds): Represents the results of SWCA.
 	- The key (e.g., "AA_DRB1_11_32660115_SGP") represents the **independent HLA locus** identified in that round.
 	- The dictionary nested under this key lists the variants that are **clumped** with this independent variant.
@@ -208,7 +208,7 @@ We provide the output summary statistics corresponding to the main analyses pres
 ### File Naming Convention
 
 Files in these directories follow the naming patterns below:
-- `{Dataset}.{Trait}.AA+HLA.PP`
+- `{Dataset}.{Trait}.AA+HLA.APP`
 - `{Dataset}.{Trait}.Z_imputed`
 
 

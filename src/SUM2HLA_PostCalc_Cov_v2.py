@@ -59,8 +59,8 @@ def calc_PP(_sr_LL_prior):
     shifted_exp = np.exp(_sr_LL_prior - C)
     log_sum_exp = C + np.log(np.sum(shifted_exp))
 
-    sr_logPP = (_sr_LL_prior - log_sum_exp).rename("logPP")
-    sr_PP    = pd.Series(np.exp(sr_logPP), name='PP', index=_sr_LL_prior.index)
+    sr_logPP = (_sr_LL_prior - log_sum_exp).rename("logAPP")
+    sr_PP    = pd.Series(np.exp(sr_logPP), name='APP', index=_sr_LL_prior.index)
 
     return sr_PP, sr_logPP
 
@@ -145,8 +145,8 @@ def postprepr_LL(_df_result, _rho=0.99, _col_CredibleSet="CredibleSet(99%)",
         return pd.concat(
             [sr_rank, sr_rank_p, _df_sub, sr_PP, sr_CredibleSet,
              sr_diff_abs, sr_diff_abs_acc, sr_logPP], axis=1
-        ).loc[:, ['rank', 'rank_p', 'SNP', 'PP', _col_CredibleSet,
-                  'LL+Lprior', 'LL+Lprior_diff', 'LL+Lprior_diff_acc', 'logPP']]
+        ).loc[:, ['rank', 'rank_p', 'SNP', 'APP', _col_CredibleSet,
+                  'LL+Lprior', 'LL+Lprior_diff', 'LL+Lprior_diff_acc', 'logAPP']]
 
     for _key, _sr_flag in d_flag_target_group.items():
         try:

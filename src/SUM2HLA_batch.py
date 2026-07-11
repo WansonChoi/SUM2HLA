@@ -229,11 +229,11 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
                     continue
 
                 _df_PP = _df_PP.copy()
-                pp_loc = _df_PP.columns.get_loc('PP')
+                pp_loc = _df_PP.columns.get_loc('APP')
                 _df_PP.insert(pp_loc, 'A2', _df_PP['SNP'].map(d_A2))
                 _df_PP.insert(pp_loc, 'A1', _df_PP['SNP'].map(d_A1))
 
-                out_temp = self.out_prefix + ".{}.PP".format(_type)
+                out_temp = self.out_prefix + ".{}.APP".format(_type)
                 _df_PP.to_csv(out_temp, sep='\t', header=True, index=False, na_rep="NA")
 
                 ## `_df_PP`를 fwrite했으면 그냥 file path를 저장.

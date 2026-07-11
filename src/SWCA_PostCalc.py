@@ -116,6 +116,12 @@ def __MAIN__(_fpath_cma, _fpath_ref, _fpath_ref_LD, _out_dir,
     ### run the PLINK clumping
     def run_PLINK_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix, _plink):
 
+        ### Genotype-free summary-based clumper (EM/haplotype r^2), same as the input-prep
+        ### clumping, is the DEFAULT. Set SUM2HLA_USE_PLINK to force the legacy PLINK path.
+        if not os.environ.get("SUM2HLA_USE_PLINK"):
+            from src.INPUT_prepr import _run_PY_clump
+            return _run_PY_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix)
+
         cmd = [
             _plink,
             "--clump", _fpath_ToClump,
@@ -178,7 +184,7 @@ def __MAIN__(_fpath_cma, _fpath_ref, _fpath_ref_LD, _out_dir,
 
     df_PP_cma = __MAIN__postCalc_SWCA(df_cma_sumstats3, df_LDmatrix_2, _ncp=_ncp)
 
-    OUT_PP_cma = join(_out_dir, basename(_fpath_cma) + ".PP")
+    OUT_PP_cma = join(_out_dir, basename(_fpath_cma) + ".APP")
     df_PP_cma.to_csv(OUT_PP_cma, sep='\t', header=True, index=False, na_rep="NA")
 
 

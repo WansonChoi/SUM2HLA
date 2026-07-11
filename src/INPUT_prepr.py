@@ -411,26 +411,22 @@ def prepare_inputs(_fPath_ss_matched:str, _fPath_clumped:str, _d_fPath_LDcurated
     
     
     
-########## (optional) pure-Python summary-based clumper ##########
+########## pure-Python summary-based clumper (DEFAULT; genotype-free) ##########
 ## Replicates PLINK 1.9 `--clump` from summary stats + a precomputed EM/haplotype
-## r^2 matrix (see /data02/wschoi/_hCAVIAR_v2/20260614_clumping_ss). Used only when
-## the env var SUM2HLA_PY_CLUMP is set; PLINK remains the default path. This lets us
-## test the summary-based clumping without removing the PLINK dependency.
-##   SUM2HLA_PY_CLUMP       : enable the Python clumper when set (non-empty).
-##   SUM2HLA_PY_CLUMP_DIR   : dir holding clump_from_ss.py + the EM r^2 .npy
-##                            (default: the 20260614_clumping_ss working dir).
-##   SUM2HLA_PY_CLUMP_NPY   : path to the panel-wide EM r^2 .npy (default: REF_T1DGC).
+## r^2 matrix (algorithm: src/clump_from_ss.py, built by src/em_r2.py). This is the
+## DEFAULT clumping backend (no genotype/PLINK binary needed). Set SUM2HLA_USE_PLINK
+## to fall back to the legacy PLINK genotype-based `--clump`.
+##   SUM2HLA_USE_PLINK      : force the legacy PLINK genotype path when set (non-empty).
+##   SUM2HLA_PY_CLUMP_NPY   : path to the panel-wide EM r^2 .npy. Default derived from
+##                            the --ref prefix: "<ref>.EM_haplotype_r2.npy".
 def _run_PY_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix):
 
-    CLUMP_DIR = os.environ.get(
-        "SUM2HLA_PY_CLUMP_DIR", "/data02/wschoi/_hCAVIAR_v2/20260614_clumping_ss")
+    ## EM/haplotype r^2 matrix (row/col order == the reference .bim order).
     PANEL_NPY = os.environ.get(
         "SUM2HLA_PY_CLUMP_NPY",
-        os.path.join(CLUMP_DIR, "LD.REF_T1DGC.hg19.SNP+HLA.EM_haplotype_r2.npy"))
+        _fpath_LD_SNP_HLA + ".EM_haplotype_r2.npy")
 
-    if CLUMP_DIR not in sys.path:
-        sys.path.insert(0, CLUMP_DIR)
-    from clump_from_ss import clump, write_clumped
+    from src.clump_from_ss import clump, write_clumped
 
     ## panel order (== row/col order of the EM r^2 matrix) from the .bim
     df_bim = pd.read_csv(
@@ -508,9 +504,9 @@ def __MAIN__(_fpath_ss, _d_fpath_LD:dict, _fpath_LD_SNP_bim, _fpath_LD_SNP_HLA,
         ### run the PLINK clumping
         def run_PLINK_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix, _plink):
 
-            ### (optional) use the pure-Python summary-based clumper instead of PLINK.
-            ### Gated by env var; PLINK is still the default. See `_run_PY_clump` above.
-            if os.environ.get("SUM2HLA_PY_CLUMP"):
+            ### Summary-based EM clumper is the DEFAULT (genotype-free). Set SUM2HLA_USE_PLINK
+            ### to force the legacy PLINK genotype-based path. See `_run_PY_clump` above.
+            if not os.environ.get("SUM2HLA_USE_PLINK"):
                 return _run_PY_clump(_fpath_ToClump, _fpath_LD_SNP_HLA, _out_prefix)
 
             cmd = [
