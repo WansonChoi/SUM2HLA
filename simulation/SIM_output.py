@@ -11,7 +11,7 @@ import src.Util as Util
 class SIM_output_scenario_1:
 
     def __init__(self, _df_SSFN:pd.DataFrame, _col_output:str, _l_answer_primary: list,
-                 _N=None, _suffix = ".whole.PP", _suffix_ma = ".ma", _suffix_ma_r2pred = ".r2pred0.6.ma", _label_failed = "Failed"):
+                 _N=None, _suffix = ".whole.APP", _suffix_ma = ".ma", _suffix_ma_r2pred = ".r2pred0.6.ma", _label_failed = "Failed"):
 
         self.df_SSFN = _df_SSFN.copy()
         self.N = _N
@@ -85,7 +85,7 @@ class SIM_output_scenario_1:
         
         """
         - scenario 2와 consistent하게 하려면 SWCA dictionary로 해야하는데, 당장 SWCA가 왜인지 실패하는 경우가 있음.
-        - 이거 때문에 scenario 1은 걍 ".whole.PP"만 활용하는걸로.
+        - 이거 때문에 scenario 1은 걍 ".whole.APP"만 활용하는걸로.
         - 마찬가지로, r2 >= 0.9이상으로 같은거로 정답처리할거는 미리 정해서 '_l_answer_primary'로 준다 가정함.
         
         """
@@ -96,7 +96,7 @@ class SIM_output_scenario_1:
             if not os.path.exists(_fpath_output):
                 return self.label_failed # 아예 fail한 경우.
 
-            df_temp = pd.read_csv(_fpath_output, sep='\t', header=0, nrows=10).sort_values("PP", ascending=False)
+            df_temp = pd.read_csv(_fpath_output, sep='\t', header=0, nrows=10).sort_values("APP", ascending=False)
 
             return df_temp['SNP'].iat[0]
         
@@ -550,7 +550,7 @@ composiiton하려니까 얘기가 또 살짝 달라지네.
 
 def concat_SIM_output_scneario_1(_d_SSFN: dict, _col_output:str="fpath_OUT", 
                       _l_answer_primary:list = ["AA_DRB1_11_32660115_SPG", "AA_DRB1_13_32660109_HF", "SNP_DRB1_32660115_GC"], 
-                      _suffix = ".whole.PP"):
+                      _suffix = ".whole.APP"):
 
     # print(_d_SSFN)
 
@@ -720,8 +720,8 @@ def iterate_modify_PP_from_1700_to_1600(_l_ncp = [6.0, 8.0, 10.0, 20.0, 30.0]):
 
             # print(f"=====[{j}]: {_fpath_OUT2}")
 
-            fpath_AA_HLA = _fpath_OUT + ".AA+HLA.PP" # from fpath_OUT
-            OUT_AA_HLA_recalc = _fpath_OUT2 + ".from_1700_to_1600.AA+HLA.PP" # to fpath_OUT2
+            fpath_AA_HLA = _fpath_OUT + ".AA+HLA.APP" # from fpath_OUT
+            OUT_AA_HLA_recalc = _fpath_OUT2 + ".from_1700_to_1600.AA+HLA.APP" # to fpath_OUT2
 
             if os.path.exists(fpath_AA_HLA):
     

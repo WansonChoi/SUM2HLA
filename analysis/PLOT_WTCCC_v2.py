@@ -1,0 +1,655 @@
+# %load_ext autoreload
+# %autoreload 2
+
+import os, sys, re
+from os.path import basename, dirname, join
+import numpy as np
+import scipy as sp
+import pandas as pd
+
+import matplotlib
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+import matplotlib.font_manager as fm
+
+from matplotlib.ticker import FixedLocator, FixedFormatter, NullFormatter
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+import analysis.PLOT_HLA_manhattan as PLOT_HLA_manhattan
+
+
+
+class plot_Figure_WTCCC():
+
+    def __init__(self, 
+                 _df_RA_PP_Round1, _df_RA_Pval_Round1, _df_RA_PP_Round2, _df_RA_Pval_Round2, 
+                 _df_T1D_PP_Round1, _df_T1D_Pval_Round1, _df_T1D_PP_Round2, _df_T1D_Pval_Round2, 
+                 _df_ref_bim_HLA,
+                 _figsize=(11, 8), _dpi=300):
+
+
+        self.plotter_RA_PP_Round1 = \
+            PLOT_HLA_manhattan.plot_HLA_manhattan_PP(_df_RA_PP_Round1, _df_ref_bim_HLA, _figsize=_figsize, _dpi=_dpi)
+        self.plotter_RA_Pval_Round1 = \
+            PLOT_HLA_manhattan.plot_HLA_manhattan_Pvalue(_df_RA_Pval_Round1, _df_ref_bim_HLA, _figsize=_figsize, _dpi=_dpi)
+
+        self.plotter_RA_PP_Round2 = \
+            PLOT_HLA_manhattan.plot_HLA_manhattan_PP(_df_RA_PP_Round2, _df_ref_bim_HLA, _figsize=_figsize, _dpi=_dpi)
+        self.plotter_RA_Pval_Round2 = \
+            PLOT_HLA_manhattan.plot_HLA_manhattan_Pvalue(_df_RA_Pval_Round2, _df_ref_bim_HLA, _figsize=_figsize, _dpi=_dpi)
+
+
+        self.plotter_T1D_PP_Round1 = \
+            PLOT_HLA_manhattan.plot_HLA_manhattan_PP(_df_T1D_PP_Round1, _df_ref_bim_HLA, _figsize=_figsize, _dpi=_dpi)
+        self.plotter_T1D_Pval_Round1 = \
+            PLOT_HLA_manhattan.plot_HLA_manhattan_Pvalue(_df_T1D_Pval_Round1, _df_ref_bim_HLA, _figsize=_figsize, _dpi=_dpi)
+
+        self.plotter_T1D_PP_Round2 = \
+            PLOT_HLA_manhattan.plot_HLA_manhattan_PP(_df_T1D_PP_Round2, _df_ref_bim_HLA, _figsize=_figsize, _dpi=_dpi)
+        self.plotter_T1D_Pval_Round2 = \
+            PLOT_HLA_manhattan.plot_HLA_manhattan_Pvalue(_df_T1D_Pval_Round2, _df_ref_bim_HLA, _figsize=_figsize, _dpi=_dpi)
+
+
+
+        ### figure parameteres
+        self.figsize = _figsize
+        self.dpi = _dpi
+
+
+        self.arial_italic = fm.FontProperties(
+            fname="/data02/wschoi/_hCAVIAR_v2/Arial_fonts/Arial Italic.ttf"
+        )
+
+
+
+    def run(self):
+
+        _color_round2 = "#86c66c"
+
+        fig = plt.figure(figsize=self.figsize, dpi=self.dpi, constrained_layout=True)
+        subfig_a, subfig_b = fig.subfigures(2, 1, hspace=0.12)  # ← a/b 사이 공간
+
+        # ─────────────────────────────────────────
+        # SubFigure a: (라벨 'a') → [Round1(1×2), Round2(1×2)]
+        # ─────────────────────────────────────────
+        subfig_a.text(-0.02, 1.05, "a", fontsize=16, fontweight="bold",
+                    transform=subfig_a.transSubfigure, ha="right", va="bottom")
+
+        subfig_a.suptitle("Rheumatoid arthritis", fontsize=14, y=1.07)
+        subfig_a.text(0.5, 1.01, "Round 1", ha="center", va="top", fontsize=12)
+
+        # a를 다시 2×1로 쪼개서 "round1"과 "round2" 구역을 만든다
+        axes_a = subfig_a.subplots(2, 2)
+        # subfig_a.subplots_adjust(hspace=10.0)  # 두 행 사이 간격 키움 (이게 constrained_layout때문에 안되는듯.)
+        print(axes_a)
+
+        # Round 1: 1×2
+        # axes_a[0, 0].set_title("Rheumatoid arthritis / Round 1", x = 1.12, y=1.15, fontsize=16)  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_a[0, 0].set_title("Summary", fontsize=14, y=1.15, weight="bold")  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_a[0, 1].set_title("Genotype", fontsize=14, y=1.15, weight="bold")  # ← 이 두 패널 묶음의 중앙 상단 제목
+
+        x_top_RA_PP_round1, y_top_RA_PP_round1 = self.plotter_RA_PP_Round1.plot_HLA_manhattan_PP(axes_a[0, 0])
+        x_top_RA_Pval_round1, y_top_RA_Pval_round1 = self.plotter_RA_Pval_Round1.plot_HLA_manhattan_Pvalue(axes_a[0, 1])
+
+
+        # Round 2: 1×2 + 중앙 상단 제목(suptitle)
+        axes_a[1, 0].set_title(" ", x = 1.05, y=1.08, fontsize=12)  # 걍 공간 확보용.
+        subfig_a.text(0.5, 0.48, "Round 2", ha="center", va="top", fontsize=12)
+        # axes_a[1, 1].set_title("Round 1", x = 0.0, y=1.5, fontsize=12)  # 이걸로 절대 안됨.
+
+        x_top_RA_PP_round2, y_top_RA_PP_round2 = self.plotter_RA_PP_Round2.plot_HLA_manhattan_PP(axes_a[1, 0], _color_top=_color_round2)
+        x_top_RA_Pval_round2, y_top_RA_Pval_round2 = self.plotter_RA_Pval_Round2.plot_HLA_manhattan_Pvalue(axes_a[1, 1], _color_top=_color_round2)
+
+
+        ##### x-label한번만 보이도록
+        axes_a[0, 0].set_xlabel("")
+        axes_a[0, 1].set_xlabel("")
+
+
+
+        ##### RA_2012의 x-labels 위치 좀만 이동. (+4/72만큼 이동해놓은거에서, 중첩해서 다시 +4/72만큼 이동.)
+        import matplotlib.transforms as mtransforms
+
+
+        for _row_idx in [0, 1]:
+
+            _ax = axes_a[_row_idx, 0]
+            
+            for label in _ax.get_xticklabels(which="major"):
+
+                label_text = label.get_text()
+
+                if label_text == "DPA1":
+                    offset = mtransforms.ScaledTranslation(+1/72, 0, _ax.figure.dpi_scale_trans)
+                    label.set_transform(label.get_transform() + offset)
+
+                if label_text == "DPB1":
+                    offset = mtransforms.ScaledTranslation(+1/72, 0, _ax.figure.dpi_scale_trans)
+                    label.set_transform(label.get_transform() + offset)
+
+
+
+        for _row_idx in [0, 1]:
+
+            _ax = axes_a[_row_idx, 1]
+            
+            for label in _ax.get_xticklabels(which="major"):
+
+                label_text = label.get_text()
+
+                if label_text == "DPB1":
+                    offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
+                    label.set_transform(label.get_transform() + offset)
+
+
+
+        ##### Round 1 top의 label
+        ax = axes_a[0, 0]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
+
+        txt = ax.text(
+            0.45, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            # "Amino acid pos. 11 and 13\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
+            # "Amino acid pos. 11 and 13\n" + r"in HLA-DRB1",  # 원하는 라벨
+            "HLA-DRβ1 positions\n11 SPG and 13 HF",
+            transform=ax.transAxes,              # ← 축 분수 좌표!
+            ha="center", va="top",
+            fontsize=10, linespacing=1.1,
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0, zorder=0)
+        )
+        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
+
+
+        ax = axes_a[0, 1]  # RA / Round1 / P-value 패널
+
+        txt = ax.text(
+            # 0.39, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            0.44, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            # "Amino acid pos. 11 and 13\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
+            # "Amino acid pos. 11 and 13\n" + r"in HLA-DRB1",  # 원하는 라벨
+            "HLA-DRβ1 positions\n11 SPG and 13 HF",
+            transform=ax.transAxes,              # ← 축 분수 좌표!
+            ha="center", va="top",
+            fontsize=10, linespacing=1.1,
+            # bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0, zorder=0)
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="none", edgecolor="none", pad=0)        
+        )
+        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
+
+
+
+        ##### Round 2 top의 label
+        ax = axes_a[1, 0]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
+
+        txt = ax.text(
+            0.32, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            # "Amino acid pos. 71 with K\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
+            # "Amino acid pos. 71 with K\n" + r"in HLA-DRB1",  # 원하는 라벨
+            "HLA-DRβ1 position 71 K",
+            transform=ax.transAxes,              # ← 축 분수 좌표!
+            ha="center", va="top",
+            fontsize=10, linespacing=1.1,
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="none", edgecolor="none", pad=0)        
+            # bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
+        )
+        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
+
+
+        ax = axes_a[1, 1]  # RA / Round1 / PP 패널 (빨간 박스가 있는 축)
+
+        txt = ax.text(
+            0.30, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            # "Amino acid pos. 71 with K\n" + r"in HLA-DR$\beta$1",  # 원하는 라벨
+            # "Amino acid pos. 71 with K\n" + r"in HLA-DRB1",  # 원하는 라벨
+            "HLA-DRβ1 position 71 K",
+            transform=ax.transAxes,              # ← 축 분수 좌표!
+            ha="center", va="top",
+            fontsize=10, linespacing=1.1,
+            # bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="none", edgecolor="none", pad=0)        
+        )
+        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
+
+
+
+        ##### Conditioning mark
+
+
+        _ax = axes_a[1, 0]
+        mx = float(np.mean(x_top_RA_PP_round1))
+        # my = float(np.mean(y_top_2022_round1))
+
+        # 라벨을 화살표 위쪽에 두기 위해 y방향으로 살짝 올린 시작점
+        y0, y1 = _ax.get_ylim()
+        # dy = 0.08 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절
+        dy = 0.01 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절
+        my = 0.1 * (y1 - y0)
+
+        x0, x1 = _ax.get_xlim()
+        dx = 0.08 * (x1 - x0)
+
+        # (1) 텍스트: 왼쪽으로 이동
+        x_text = mx
+        y_text = my + dy          # 머리 위에 위치
+        txt = _ax.text(
+            x_text, y_text,
+            # "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DR$\beta$1",
+            # "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DRB1",  # 이제 그냥 다 정자체로 뽑고 inkscape 가져가서 italic넣을거임.
+            # "control for\n" + "Amino acid pos. 13 with HF\n" + r"in HLA-DRB1",  # 이제 그냥 다 정자체로 뽑고 inkscape 가져가서 italic넣을거임.
+            "control for\n" + "HLA-DRβ1 position 13 HF\n",
+            ha="center", va="bottom", fontsize=10, zorder=5,
+        )
+        # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
+        txt.set_in_layout(False)
+
+
+        _head = _ax.scatter(
+            [mx], [my],
+            marker='v',           # 아래로 향한 삼각형
+            s=32,                 # 크기
+            color='#d62728',
+            zorder=6, clip_on=False
+        )
+
+
+        _ax = axes_a[1, 1]
+        mx = float(np.mean(x_top_RA_Pval_round1))
+        # my = float(np.mean(y_top_2022_round1))
+
+        # 라벨을 화살표 위쪽에 두기 위해 y방향으로 살짝 올린 시작점
+        y0, y1 = _ax.get_ylim()
+        dy = 0.01 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절 (0.01보다 작아지진 않는듯.; 2026.05.09)
+        my = 0.1 * (y1 - y0)
+
+        x0, x1 = _ax.get_xlim()
+        dx = 0.08 * (x1 - x0)
+
+        # (1) 텍스트: 왼쪽으로 이동
+        x_text = mx
+        y_text = my + dy          # 머리 위에 위치
+        txt = _ax.text(
+            x_text, y_text,
+            # "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DR$\beta$1",
+            # "control for\n" + "Amino acid pos. 11 with SPG\n" + r"in HLA-DRB1", # 이제 그냥 다 정자체로 뽑고 inkscape 가져가서 italic넣을거임.
+            # "control for\n" + "Amino acid pos. 13 with HF\n" + r"in HLA-DRB1",  
+            "control for\n" + "HLA-DRβ1 position 13 HF\n",
+            ha="center", va="bottom", fontsize=10, zorder=5,
+        )
+        # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
+        txt.set_in_layout(False)
+
+
+        _head = _ax.scatter(
+            [mx], [my],
+            marker='v',           # 아래로 향한 삼각형
+            s=32,                 # 크기
+            color='#d62728',
+            zorder=6, clip_on=False
+        )
+
+
+
+        # ─────────────────────────────────────────
+        # SubFigure b: (라벨 'b') → 2×2
+        # ─────────────────────────────────────────
+        subfig_b.text(-0.02, 1.05, "b", fontsize=16, fontweight="bold",
+                    transform=subfig_b.transSubfigure, ha="right", va="bottom")
+
+        subfig_b.suptitle("Type 1 diabetes", fontsize=14, y=1.07)
+        subfig_b.text(0.5, 1.01, "Round 1", ha="center", va="top", fontsize=12)
+
+
+
+        # a를 다시 2×1로 쪼개서 "round1"과 "round2" 구역을 만든다
+        axes_b = subfig_b.subplots(2, 2)
+        print(axes_b)
+
+        # Round 1: 1×2
+        # axes_b[0, 0].set_title("Type 1 diabetes / Round 1", x = 1.12, y=1.15, fontsize=16)  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_b[0, 0].set_title("Summary", fontsize=14, y=1.2, weight="bold")  # ← 이 두 패널 묶음의 중앙 상단 제목
+        axes_b[0, 1].set_title("Genotype", fontsize=14, y=1.2, weight="bold")  # ← 이 두 패널 묶음의 중앙 상단 제목
+
+
+
+
+        x_top_T1D_PP_round1, y_top_T1D_PP_round1 = self.plotter_T1D_PP_Round1.plot_HLA_manhattan_PP(axes_b[0, 0])
+        x_top_T1D_Pval_round1, y_top_T1D_Pval_round1 = self.plotter_T1D_Pval_Round1.plot_HLA_manhattan_Pvalue(axes_b[0, 1])
+
+
+        # Round 2: 1×2 + 중앙 상단 제목(suptitle)
+        axes_b[1, 0].set_title(" ", x = 1.05, y=1.08, fontsize=12)  # 걍 공간확보용
+        subfig_b.text(0.5, 0.48, "Round 2", ha="center", va="top", fontsize=12)
+        # axes_b[1, 0].set_title("Round 2", x = 1.08, y=1.08, fontsize=12)  # ← 이 두 패널 묶음의 중앙 상단 제목
+
+        self.plotter_T1D_PP_Round2.plot_HLA_manhattan_PP(axes_b[1, 0], _color_top=_color_round2)
+        self.plotter_T1D_Pval_Round2.plot_HLA_manhattan_Pvalue(axes_b[1, 1], _color_top=_color_round2)
+
+
+        ##### x-label한번만 보이도록
+        axes_b[0, 0].set_xlabel("")
+        axes_b[0, 1].set_xlabel("")
+
+
+
+        for _row_idx in [0, 1]:
+
+            _ax = axes_b[_row_idx, 0]
+            
+            for label in _ax.get_xticklabels(which="major"):
+
+                label_text = label.get_text()
+
+                if label_text == "DPA1":
+                    offset = mtransforms.ScaledTranslation(+1/72, 0, _ax.figure.dpi_scale_trans)
+                    label.set_transform(label.get_transform() + offset)
+
+                if label_text == "DPB1":
+                    offset = mtransforms.ScaledTranslation(+1/72, 0, _ax.figure.dpi_scale_trans)
+                    label.set_transform(label.get_transform() + offset)
+
+
+
+        for _row_idx in [0, 1]:
+
+            _ax = axes_b[_row_idx, 1]
+            
+            for label in _ax.get_xticklabels(which="major"):
+
+                label_text = label.get_text()
+
+                if label_text == "DPB1":
+                    offset = mtransforms.ScaledTranslation(+2/72, 0, _ax.figure.dpi_scale_trans)
+                    label.set_transform(label.get_transform() + offset)
+
+
+
+
+        ##### Round 1 top의 label
+        ax = axes_b[0, 0]  # T1D / Round1
+
+        txt = ax.text(
+            0.55, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            # "Amino acid pos. 57 with D\n" + r"in HLA-DQ$\beta$1",  # 원하는 라벨
+            # "Amino acid pos. 57 with D\n" + r"in HLA-DQB1",  # 원하는 라벨
+            "HLA-DQβ1 position 57 D",
+            transform=ax.transAxes,              # ← 축 분수 좌표!
+            ha="center", va="top",
+            fontsize=10, linespacing=1.1,
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="none", edgecolor="none", pad=0)        
+            # bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
+        )
+        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
+
+
+        ax = axes_b[0, 1]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
+
+        txt = ax.text(
+            0.47, 1.00,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            # "Amino acid pos. 57\n" + r"in HLA-DQ$\beta$1",  # 원하는 라벨
+            # "Amino acid pos. 57\n" + r"in HLA-DQB1",  # 원하는 라벨
+            # "Amino acid pos. 57 with A, AS, AV, D\n" + r"in HLA-DQB1",  # 원하는 라벨
+            "HLA-DQβ1 position 57 A, AS, AV, D",
+            transform=ax.transAxes,              # ← 축 분수 좌표!
+            ha="center", va="top",
+            fontsize=10, linespacing=1.1,
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="none", edgecolor="none", pad=0)        
+            # bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
+        )
+        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
+
+
+
+        ##### Round 2 top의 label
+        ax = axes_b[1, 0]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
+
+        txt = ax.text(
+            0.47, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            # "Amino acid pos. 52 with R\n" + r"in HLA-DQ$\alpha$1" + "\n(r=-1.0)",  # 원하는 라벨
+            # "Amino acid pos. 52 with R\n" + r"in HLA-DQ$\alpha$1",
+            # "Amino acid pos. 52 with R\n" + r"in HLA-DQA1",
+            "HLA-DQα1 position 52 R",
+            transform=ax.transAxes,              # ← 축 분수 좌표!
+            ha="center", va="top",
+            fontsize=10, linespacing=1.1,
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
+        )
+        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
+
+
+        ax = axes_b[1, 1]  # T1D / Round1 / PP 패널 (빨간 박스가 있는 축)
+
+        txt = ax.text(
+            0.46, 1.0,                          # (x,y) = 축 내 분수 좌표 (좌측 5%, 상단 8% 아래)
+            # "Amino acid pos. 52 with R\nand 47 with RK\n" + r"in HLA-DQ$\alpha$1",  # 원하는 라벨
+            # "Amino acid pos. 52 with R\nand 47 with RK\n" + r"in HLA-DQA1",  # 원하는 라벨
+            # "Amino acid pos. 52 with R\n" + r"in HLA-DQA1",  # 원하는 라벨
+            "HLA-DQα1 position 52 R",
+            transform=ax.transAxes,              # ← 축 분수 좌표!
+            ha="center", va="top",
+            fontsize=10, linespacing=1.1,
+            bbox=dict(boxstyle="round,pad=0.2", facecolor="none", edgecolor="none", pad=0)        
+            # bbox=dict(boxstyle="round,pad=0.2", facecolor="white", alpha=0.9, linewidth=0)
+        )
+        txt.set_in_layout(False)  # 레이아웃에 영향 주지 않도록(축 폭 줄어드는 것 방지)
+
+
+
+
+
+        ##### Conditioning mark
+
+        _ax = axes_b[1, 0]
+        mx = float(np.mean(x_top_T1D_PP_round1))
+        # my = float(np.mean(y_top_2022_round1))
+
+        # 라벨을 화살표 위쪽에 두기 위해 y방향으로 살짝 올린 시작점
+        y0, y1 = _ax.get_ylim()
+        dy = 0.08 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절
+        my = 0.1 * (y1 - y0)
+
+        x0, x1 = _ax.get_xlim()
+        dx = 0.08 * (x1 - x0)
+
+        # (1) 텍스트: 왼쪽으로 이동
+        x_text = mx - dx          # 원하는 만큼 왼쪽
+        y_text = my + dy          # 머리 위에 위치
+        txt = _ax.text(
+            x_text, y_text,
+            # "control for\n" + "Amino acid pos. 57 with D\n" + r"in HLA-DQ$\beta$1",
+            # "control for\n" + "Amino acid pos. 57 with D\n" + r"in HLA-DQB1",
+            "control for\n" + "HLA-DQβ1 position 57 D",
+            ha="center", va="bottom", fontsize=10, zorder=5,
+        )
+        # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
+        txt.set_in_layout(False)
+
+
+        _head = _ax.scatter(
+            [mx], [my],
+            marker='v',           # 아래로 향한 삼각형
+            s=32,                 # 크기
+            color='#d62728',
+            zorder=6, clip_on=False
+        )
+
+
+
+        _ax = axes_b[1, 1]
+        mx = float(np.mean(x_top_T1D_Pval_round1))
+        # my = float(np.mean(y_top_2022_round1))
+
+        # 라벨을 화살표 위쪽에 두기 위해 y방향으로 살짝 올린 시작점
+        y0, y1 = _ax.get_ylim()
+        dy = 0.08 * (y1 - y0)  # 필요하면 0.05~0.12 범위에서 조절
+        my = 0.1 * (y1 - y0)
+
+        x0, x1 = _ax.get_xlim()
+        dx = 0.08 * (x1 - x0)
+
+        x_text = mx - dx        # 원하는 만큼 왼쪽
+        y_text = my + dy          # 머리 위에 위치
+        txt = _ax.text(
+            x_text, y_text,
+            # "control for\n" + "Amino acid pos. 57 with D\n" + r"in HLA-DQ$\beta$1",
+            # "control for\n" + "Amino acid pos. 57 with D\n" + r"in HLA-DQB1",
+            "control for\n" + "HLA-DQβ1 position 57 D",
+            ha="center", va="bottom", fontsize=10, zorder=5,
+        )
+        # constrained_layout이 축 폭을 줄이지 않게(레이아웃 영향 제거)
+        txt.set_in_layout(False)
+
+
+        _head = _ax.scatter(
+            [mx], [my],
+            marker='v',           # 아래로 향한 삼각형
+            s=32,                 # 크기
+            color='#d62728',
+            zorder=6, clip_on=False
+        )
+
+
+        return fig
+
+
+
+
+
+class LR_WTCCC():
+
+    def __init__(self, _df_gold, _df_imputed):
+
+        """
+        - Required columns: Z-score, SNP_label, effect_allele (지금은 맞춰졌다 가정.)
+        """
+
+        self.df_gold = _df_gold.copy()
+        self.df_imputed = _df_imputed.copy()
+
+        self.df_ToLR = None # 이걸로 LR 진행할거임.
+        self.model_R = None
+
+
+    def prepr(self):
+
+        df_gold = self.df_gold \
+                    .rename({'STAT': 'Z'}, axis=1) \
+                    .dropna(subset=['Z']) \
+                    .loc[:, ['SNP', 'A1', 'Z']]
+        
+        df_imputed = self.df_imputed \
+                    .rename({'b': 'Z'}, axis=1) \
+                    .dropna(subset=['Z']) \
+                    .loc[:, ['SNP', 'A1', 'Z']]
+        
+
+        self.df_ToLR = df_gold.merge(df_imputed, on=['SNP', 'A1'], suffixes = ['_gold', '_imputed'])
+
+        return self.df_ToLR
+    
+
+    def perform_LR(self, _f_add_intercept=False):
+
+        import statsmodels.api as sm
+
+        Y = self.df_ToLR['Z_gold']
+        X = sm.add_constant(self.df_ToLR['Z_imputed']) if _f_add_intercept else self.df_ToLR['Z_imputed']
+
+        self.model_LR = sm.OLS(
+            Y, X
+        ).fit()
+
+        print(self.model_LR.summary())
+
+        return self.model_LR
+
+
+    def plot_LR_model(self, _ax):
+
+        import seaborn as sns
+
+        sns.regplot(data=self.df_ToLR,
+                    x='Z_imputed', y='Z_gold', line_kws={'color': 'red'}, ax=_ax)
+        _ax.set_title(
+            f"R²: {self.model_LR.rsquared:.4f} / Coef: {self.model_LR.params['Z_imputed']:.4f} / t-value: {self.model_LR.tvalues['Z_imputed']:.4f}"
+            )
+        # plt.title(f"R²: {model.rsquared:.4f}")
+
+
+        return 0
+
+
+    def run(self):
+
+        self.prepr()
+        self.perform_LR()
+
+
+        # fig, axes = plt.subplots(1,1, figsize=(6, 6), dpi=150)
+
+        # self.plot_LR_model(axes)
+
+
+        return 0
+
+
+if __name__ == '__main__':
+
+    plt.switch_backend('agg')
+
+    arial_paths = [
+        "/data02/wschoi/_hCAVIAR_v2/Arial_fonts/Arial.ttf",
+        "/data02/wschoi/_hCAVIAR_v2/Arial_fonts/Arial Bold.ttf",
+        "/data02/wschoi/_hCAVIAR_v2/Arial_fonts/Arial Italic.ttf",
+        "/data02/wschoi/_hCAVIAR_v2/Arial_fonts/Arial Bold Italic.ttf",
+    ]
+    for path in arial_paths:
+        fm.fontManager.addfont(path)
+    mpl.rcParams['font.family'] = fm.FontProperties(
+        fname="/data02/wschoi/_hCAVIAR_v2/Arial_fonts/Arial.ttf"
+    ).get_name()
+    mpl.rcParams['svg.fonttype'] = 'none'
+
+    _base = "/data02/wschoi/_hCAVIAR_v2/20251007_WTCCC_rerun_v2"
+
+    df_RA_PP_ROUND1 = pd.read_csv(
+        f"{_base}/20251007.SWCA_test.ma_AA+HLA.integ.SUM2HLA.WTCCC.RA.AA+HLA.PP",
+        sep='\t', header=0)
+    df_RA_PLINK_ROUND1 = pd.read_csv(
+        "/data02/wschoi/_ClusterPhes_v4/20250119_SNP2HLA_merged/IMPUTED.WTCCC.58C+NBS+RA.hg19.chr6.29-34mb.N4798.assoc.logistic.sort",
+        sep='\t', header=0)
+    df_RA_PP_ROUND2 = pd.read_csv(
+        f"{_base}/20251007.SWCA_test.ma_AA+HLA.integ.SUM2HLA.WTCCC.RA.ROUND_/20251007.SWCA_test.ma_AA+HLA.integ.SUM2HLA.WTCCC.RA.ROUND_2.cma.cojo.PP",
+        sep='\t', header=0)
+    df_RA_PLINK_ROUND2 = pd.read_csv(
+        f"{_base}/20251007.PLINK.SWCA_n.WTCCC.RA.AA_DRB1_13_32660109_HF.ROUND_1.assoc.logistic.sort",
+        sep='\t', header=0)
+
+    df_T1D_PP_ROUND1 = pd.read_csv(
+        f"{_base}/20251007.SWCA_test.integ.SUM2HLA.T1D.AA+HLA.PP",
+        sep='\t', header=0)
+    df_T1D_PLINK_ROUND1 = pd.read_csv(
+        "/data02/wschoi/_ClusterPhes_v4/20250119_SNP2HLA_merged/IMPUTED.WTCCC.58C+NBS+T1D.hg19.chr6.29-34mb.N4901.assoc.logistic.sort",
+        sep='\t', header=0)
+    df_T1D_PP_ROUND2 = pd.read_csv(
+        f"{_base}/20251007.SWCA_test.integ.SUM2HLA.T1D.ROUND_/20251007.SWCA_test.integ.SUM2HLA.T1D.ROUND_2.cma.cojo.PP",
+        sep='\t', header=0)
+    df_T1D_PLINK_ROUND2 = pd.read_csv(
+        f"{_base}/20251007.PLINK.SWCA_n.WTCCC.T1D.AA_DQB1_57_32740666_D.ROUND_1.assoc.logistic.sort",
+        sep='\t', header=0)
+
+    df_T1DGC_bim_HLA_M1600 = pd.read_csv(
+        "/data02/wschoi/_hCAVIAR_v2/Paper_Fig_HLAmanhattan/REF_T1DGC.hg19.HLA.HLAgenes.M1600_codingAA+HLA.bim",
+        sep='\t', header=0)
+
+    plotter = plot_Figure_WTCCC(
+        df_RA_PP_ROUND1, df_RA_PLINK_ROUND1, df_RA_PP_ROUND2, df_RA_PLINK_ROUND2,
+        df_T1D_PP_ROUND1, df_T1D_PLINK_ROUND1, df_T1D_PP_ROUND2, df_T1D_PLINK_ROUND2,
+        df_T1DGC_bim_HLA_M1600,
+        _figsize=(8, 10), _dpi=150
+    )
+    fig = plotter.run()
+
+    output_path = "/data02/wschoi/_hCAVIAR_v2/SUM2HLA/Fig.WTCCC.v3.pdf"
+    fig.savefig(output_path, dpi=350, bbox_inches="tight")
+    fig.savefig(output_path.replace("pdf", "svg"), format="svg", dpi=300, bbox_inches="tight")
+    fig.savefig(output_path.replace("pdf", "png"), format="png", dpi=300, bbox_inches="tight", facecolor='white')
+    print(f"Saved: {output_path}")
