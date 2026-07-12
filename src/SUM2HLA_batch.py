@@ -25,7 +25,8 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
                  _f_run_SWCR=True, _N_max_iter=3, _r2_pred=0.6, 
                  _ncp=5.2,
                  _out_json=None, _bfile_ToClump=None, _f_do_clump=True, # Utility arguments for testing.
-                 _plink=which("plink"), _gcta=None
+                 _plink=which("plink"), _gcta=None,
+                 _f_include_HLAh=False,
     ):
 
         ##### INPUT
@@ -85,7 +86,10 @@ class SUM2HLA_batch(): # a single run (batch) of SUM2HLA.
 
         ## Types of markers to calculate PP.
         # self.l_type = ('whole', 'SNP', 'HLAtype', 'HLA', 'AA', 'intraSNP', 'AA+HLA')
-        self.l_type = ('AA+HLA', 'HLA', 'AA', 'HLAh', 'HLA+HLAh', 'AA+HLA+HLAh')
+        ## Default output = 3 classical groups. `--include-HLAh` adds the HLA-haplotype
+        ## (HLAh) groups so that HLAh markers enter the APP computation/output.
+        self.l_type = ('AA+HLA', 'HLA', 'AA', 'HLAh', 'HLA+HLAh', 'AA+HLA+HLAh') \
+            if _f_include_HLAh else ('AA+HLA', 'HLA', 'AA')
 
 
         ### SWCR

@@ -103,6 +103,12 @@ if __name__ == "__main__":
     parser.add_argument("--skip-SWCA", help="Skip the StepWise Conditional Analysis (SWCA).",
                         action="store_true")
 
+    parser.add_argument("--include-HLAh",
+                        help="Include HLA-haplotype (HLAh) binary markers in the APP computation/output "
+                             "(adds the HLAh, HLA+HLAh, AA+HLA+HLAh output groups). Requires the reference "
+                             "panel to contain at least one 'HLAh'-prefixed marker.",
+                        action="store_true")
+
     parser.add_argument("--gpu-id", help="A GPU ID to use. (applied only when a GPU is available)", 
                         type=int, default=0, metavar="")
 
@@ -199,7 +205,8 @@ if __name__ == "__main__":
             a_batch_SUM2HLA = SUM2HLA_batch(
                 args.sumstats, args.ref, args.out,
                 _batch_size=args.batch_size, _f_run_SWCR=(not args.skip_SWCA),
-                _plink=args.plink_path
+                _plink=args.plink_path,
+                _f_include_HLAh=args.include_HLAh
             )
             # print(a_batch_SUM2HLA)
             a_batch_SUM2HLA.run()

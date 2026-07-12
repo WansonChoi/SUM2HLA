@@ -74,6 +74,24 @@ def check_reference_data(_ref) -> bool:
 
 
 
+def check_HLAh_markers(_ref) -> bool:
+
+    ### `--include-HLAh` requires the reference panel to carry at least one HLA-haplotype
+    ### (HLAh) binary marker (SNP name prefixed with "HLAh").
+    df_bim = pd.read_csv(_ref + ".bim", sep='\t', header=None, usecols=[1], names=['SNP'])
+    n_HLAh = int(df_bim['SNP'].astype(str).str.startswith("HLAh").sum())
+
+    if n_HLAh == 0:
+        raise FileNotFoundError(
+            f"--include-HLAh was given, but the reference panel has NO HLAh markers "
+            f"(no variant with the 'HLAh' name prefix in {_ref}.bim).\n"
+            f"  Use a reference panel that includes HLA-haplotype binary markers, "
+            f"or drop --include-HLAh.")
+
+    return True
+
+
+
 def check_outdir(_out_prefix) -> bool:
 
     if dirname(_out_prefix) == '':
@@ -98,5 +116,9 @@ def __MAIN__(_args):
         f_check_sumstats and \
         f_check_reference_data and \
         f_check_outdir
+
+    ### only when the user explicitly requests HLAh output
+    if getattr(_args, 'include_HLAh', False):
+        f_ToCheck = f_ToCheck and check_HLAh_markers(_args.ref)
 
     return f_ToCheck
