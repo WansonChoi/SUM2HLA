@@ -82,16 +82,42 @@ def em_r2_matrix(G, n_iter=60):
     return r2
 
 
-if __name__ == '__main__':
-    import sys
-    bedp = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_T1DGC.hg19.SNP+HLA"
-    # quick self-test against PLINK --ld values
-    test = ['rs9268844', 'rs3806157', 'rs9262582', 'rs9263600', 'rs9268494', 'rs9268497']
-    snps, G, bp = read_bed_subset(bedp, test)
+def wrapper_make_EM_haplotype_r2_matrix(_bed_prefix, _out_npy):
+    """Build the panel-wide EM/haplotype r^2 matrix from a PLINK bfile and save it as a
+    .npy (row/col order == the reference .bim order; diagonal = 1). This matrix is the
+    clumping input for the genotype-free (summary-based) SUM2HLA pipeline — it must be
+    placed at `<ref>.EM_haplotype_r2.npy` (or pointed to via env SUM2HLA_PY_CLUMP_NPY).
+    Returns (out_path, R2)."""
+    bim = pd.read_csv(_bed_prefix + ".bim", sep='\t', header=None,
+                      names=['CHR', 'SNP', 'GD', 'BP', 'A1', 'A2'])
+    snps, G, bp = read_bed_subset(_bed_prefix, bim['SNP'].tolist())
+    assert snps == bim['SNP'].tolist(), "marker order mismatch between .bed and .bim"
     R2 = em_r2_matrix(G)
-    pos = {s: i for i, s in enumerate(snps)}
-    for a, b, exp in [('rs9268844', 'rs3806157', 0.502944),
-                      ('rs9262582', 'rs9263600', 0.520921),
-                      ('rs9268844', 'rs9268494', 0.507579),
-                      ('rs9268844', 'rs9268497', 0.507538)]:
-        print(f"{a}-{b}: EM_py={R2[pos[a],pos[b]]:.6f}  PLINK_ld={exp:.6f}")
+    np.save(_out_npy, R2)
+    return _out_npy, R2
+
+
+if __name__ == '__main__':
+    import argparse
+    ap = argparse.ArgumentParser(
+        description="Build the EM/haplotype r^2 matrix (SUM2HLA summary-based clumping input).")
+    ap.add_argument('--bfile', help="reference PLINK bfile prefix (.bed/.bim/.fam)")
+    ap.add_argument('--out', help="output .npy path (recommended: <ref>.EM_haplotype_r2.npy)")
+    args = ap.parse_args()
+
+    if args.bfile and args.out:
+        out, R2 = wrapper_make_EM_haplotype_r2_matrix(args.bfile, args.out)
+        print(f"written: {out}  shape={R2.shape}  diag={np.diag(R2)[:2]}  "
+              f"sym_err={np.abs(R2 - R2.T).max():.1e}")
+    else:
+        # quick self-test against PLINK --ld values
+        bedp = "/data02/wschoi/_ClusterPhes_v4/LD_from_HLA_reference_panel/REF_T1DGC.hg19.SNP+HLA"
+        test = ['rs9268844', 'rs3806157', 'rs9262582', 'rs9263600', 'rs9268494', 'rs9268497']
+        snps, G, bp = read_bed_subset(bedp, test)
+        R2 = em_r2_matrix(G)
+        pos = {s: i for i, s in enumerate(snps)}
+        for a, b, exp in [('rs9268844', 'rs3806157', 0.502944),
+                          ('rs9262582', 'rs9263600', 0.520921),
+                          ('rs9268844', 'rs9268494', 0.507579),
+                          ('rs9268844', 'rs9268497', 0.507538)]:
+            print(f"{a}-{b}: EM_py={R2[pos[a],pos[b]]:.6f}  PLINK_ld={exp:.6f}")
