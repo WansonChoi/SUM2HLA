@@ -4,9 +4,9 @@
 
 **SUM2HLA** performs __Human Leukocyte Antigen (HLA) fine-mapping__ using only GWAS summary statistics of a target disease, eliminating the need for individual-level genotype data.
 
-SUM2HLA enhances analytical resolution by calculating the **Approximated Posterior Probability (APP)** of causality for each HLA variant—including both HLA alleles and amino acid residues—by leveraging joint-association information, which offers higher resolution than marginal p-values.
+SUM2HLA enhances analytical resolution by calculating the **Approximated Posterior Probability (APP)** of causality for each candidate marker—a 2-field classical HLA allele or an amino acid position—by leveraging joint-association information, which offers higher resolution than marginal p-values.
 
-Using the GWAS summary statistics of the target disease and a reference LD matrix, SUM2HLA identifies putative causal HLA loci with the highest APP and performs **Stepwise Conditional Analysis (SWCA)** to detect independent HLA loci.
+Using the GWAS summary statistics of the target disease and a reference correlation matrix, SUM2HLA identifies putative causal HLA loci with the highest APP and performs **Stepwise Conditional Analysis (SWCA)** to detect independent HLA loci.
 
 
 
@@ -67,7 +67,7 @@ conda create -y -n SUM2HLA -c conda-forge jax=0.4.14 "jaxlib=0.4.14=cuda112py310
 
 ### (2-5) Activate and Fetch Example Data
 
-After creating the environment, you must activate it and retrieve the reference LD matrix file (382MB). This step is crucial for running the example successfully.
+After creating the environment, you must activate it and retrieve the reference correlation matrix file (382MB). This step is crucial for running the example successfully.
 
 
 First, activate the SUM2HLA environment:
@@ -87,7 +87,7 @@ Why are these commands necessary?
 
 - `git lfs install --local`: We use the --local option to ensure the configuration is applied only to this repository using the version installed in our Conda environment, without modifying or conflicting with your global system settings.
 
-- `git lfs pull`: Even if git clone completed successfully, the large LD matrix file (example/REF_1kG.EUR.hg19.SNP+HLA.NoNA.PSD.ld.gz) may have been downloaded as a small "pointer file" rather than the actual binary data. This command ensures the real file is downloaded.
+- `git lfs pull`: Even if git clone completed successfully, the large correlation matrix file (example/REF_1kG.EUR.hg19.SNP+HLA.NoNA.PSD.ld.gz) may have been downloaded as a small "pointer file" rather than the actual binary data. This command ensures the real file is downloaded.
 
 
 
@@ -108,7 +108,13 @@ python SUM2HLA.py \
 
 This example uses GWAS summary statistics for Rheumatoid arthritis (RA) and a **1000 Genomes (1kG) Project European** reference dataset, both provided in this repository.
 
-> Note: While the original paper utilizes the Type 1 Diabetes Genetic Consortium (T1DGC) reference dataset, this example uses the 1kG dataset because the T1DGC data is not publicly open.
+### Note on the reference panel provided in this repository
+
+The reference panel in `example/` is provided **for the example run only**.
+
+All analyses in our paper were performed with the Type 1 Diabetes Genetics Consortium (T1DGC) reference panel. That panel is available only upon request for research purposes, so we cannot redistribute it here. Instead, we provide a reference panel that we built from the publicly available 1000 Genomes Project EUR reference panel distributed with CookHLA, using the same steps we applied to the T1DGC reference panel.
+
+We verified this panel only to the extent of confirming that the example run works correctly. We did not benchmark it as extensively as the T1DGC reference panel, and we therefore recommend against using it for actual analyses. To build a reference panel for your own analyses, follow the procedure in the Wiki: [Constructing the T1DGC Reference Correlation Matrix](https://github.com/WansonChoi/SUM2HLA/wiki/Constructing-the-T1DGC-Reference-Correlation-Matrix).
 
 Expected Runtime: Approximately 3 minutes on a GPU or 10 minutes on a CPU (based on our system specifications).
 
@@ -122,11 +128,23 @@ conda deactivate
 
 ## (4) Output Files
 
-SUM2HLA generates two main output files:
+For each run, SUM2HLA generates **one `*.APP` file per candidate set** plus the result of the Stepwise Conditional Analysis (SWCA).
 
-### (4-1) The `*.AA+HLA.APP` File
+### (4-1) The `*.APP` Files
 
-This file provides the causal posterior probabilities (reported in the `APP` column) for each HLA variant in the target disease. It contains $h$ rows (corresponding to the number of HLA variants in the reference dataset; e.g., 1,573 for the 1kG EUR reference) and 11 columns. The file is sorted in descending order by `APP`.
+SUM2HLA reports the approximated posterior probability (APP) of causality **separately for three candidate sets**, so that you can choose the set you want to analyze:
+
+| File | Candidate set |
+| :--- | :--- |
+| `*.AA+HLA.APP` | 2-field classical HLA alleles **and** amino acid positions (the set used in our paper) |
+| `*.HLA.APP` | 2-field classical HLA alleles only |
+| `*.AA.APP` | amino acid positions only |
+
+Each file is self-contained: the `APP` values are normalized **within that candidate set**, so they sum to 1.0 over the markers of that set. The `rank`, `rank_p`, and `CredibleSet(99%)` columns are likewise computed within the set. A marker therefore receives a different APP in `*.AA+HLA.APP` than in `*.AA.APP`, because the two sets have different denominators.
+
+> Note: One-field (allele group) markers such as `HLA_A_01` are not used in any candidate set; only 2-field classical HLA alleles such as `HLA_A_0101` are. Amino acid markers are restricted to positions of the mature HLA protein, so signal-peptide positions (negative position numbers) are excluded.
+
+Each file contains one row per marker in the corresponding candidate set and 11 columns, sorted in descending order by `APP`. The example below is from `*.AA+HLA.APP`.
 
 | rank | rank_p | SNP | A1 | A2 | APP | CredibleSet(99%) | LL+Lprior | LL+Lprior_diff | LL+Lprior_diff_acc | logAPP |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
@@ -137,15 +155,15 @@ This file provides the causal posterior probabilities (reported in the `APP` col
 | 5 | 0.0025429... | AA_DRB1_96_32657590_Y | P | A | 2.6564321773915476e-06 | False | 254.70916748046875 | 2.01416015625 | 12.837158203125 | -12.83852662219573 |
 
 Column Descriptions:
-1. SNP: The marker label for each HLA variant.
+1. SNP: The marker label of the classical HLA allele or amino acid position.
 2. A1: The effect allele, as defined in the reference panel (`.bim` file, 5th column).
 3. A2: The non-effect allele, as defined in the reference panel (`.bim` file, 6th column).
 4. APP: The causal posterior probability.
 5. CredibleSet(99%): Indicates whether the variant is included in the 99% credible set (accumulated top APPs reaching 0.99).
 6. rank: The rank of the variant (The variant with the highest APP has a rank of 1).
-7. rank_p: The percentile rank among all $h$ HLA variants provided by the reference.
+7. rank_p: The percentile rank among all $h$ markers of the candidate set.
 	- Note: The highest APP variant has a rank_p of 0.0 (calculated as $0 / h$). The 2nd highest is $1 / h$.
-8. LL+Lprior: The sum of the log-likelihood (calculated using observed association z-scores and the reference LD matrix via multivariate normal distribution) and the log-prior probability. This value is used to calculate logAPP.
+8. LL+Lprior: The sum of the log-likelihood (calculated using observed association z-scores and the reference correlation matrix via multivariate normal distribution) and the log-prior probability. This value is used to calculate logAPP.
 9. logAPP: The natural logarithm of the posterior probability, derived from the LL+Lprior column before conversion to the final APP.
 10. LL+Lprior_diff: The difference in LL+Lprior values between two adjacent variants in the sorted list.
 11. LL+Lprior_diff_acc: The difference in LL+Lprior values between the top-ranked variant (rank 1) and the current variant (rank N).
@@ -154,7 +172,7 @@ Column Descriptions:
 
 ### (4-2) The `*.r2pred0.6.ma.SWCA.dict` File
 
-This file contains the results of the Stepwise Conditional Analysis (SWCA) in JSON format.
+This file contains the results of the Stepwise Conditional Analysis (SWCA) in JSON format. The SWCA is performed on the `AA+HLA` candidate set.
 
 ```bash
 {
@@ -173,11 +191,11 @@ This file contains the results of the Stepwise Conditional Analysis (SWCA) in JS
             },
 ```
 
-- ROUND_1: Represents the top HLA variant identified with the highest APP.
+- ROUND_1: Represents the top candidate identified with the highest APP.
 - ROUND_2 (and subsequent rounds): Represents the results of SWCA.
 	- The key (e.g., "AA_DRB1_11_32660115_SGP") represents the **independent HLA locus** identified in that round.
 	- The dictionary nested under this key lists the variants that are **clumped** with this independent variant.
-	- The innermost dictionary provides the LD values ($r$ and $r^2$) between the clumped variant and the identified independent HLA variant.
+	- The innermost dictionary provides the correlation values ($r$ and $r^2$) between the clumped marker and the identified independent HLA locus.
 
 ### (4-3) Other Output Files
 
@@ -187,7 +205,7 @@ For details on additional output files, please refer to the Wiki section.
 
 ## (5) How to create a reference dataset for SUM2HLA?
 
-Detailed instructions are available in the Wiki section (https://github.com/WansonChoi/SUM2HLA/wiki/Constructing-the-T1DGC-Reference-LD-Matrix).
+Detailed instructions are available in the Wiki section (https://github.com/WansonChoi/SUM2HLA/wiki/Constructing-the-T1DGC-Reference-Correlation-Matrix).
 
 
 
