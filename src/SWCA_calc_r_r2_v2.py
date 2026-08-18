@@ -19,7 +19,7 @@ Everything else (round/clumped-file bookkeeping) is reused unchanged from the or
 module so behavior stays identical.
 """
 
-import os, re, json
+import os, re, json, gzip
 from os.path import dirname, basename, join, exists
 import numpy as np
 import pandas as pd
@@ -32,11 +32,19 @@ from src.SWCA_calc_r_r2 import (
 R2_WINDOW_MIN = 0.2   # mirrors PLINK `--ld-window-r2 0.2` used by the original calc_r_r2
 
 
+def _open_ld(_fpath_ld):
+    """Open a square matrix that may be plain text or gzipped.
+    Everything else on this path goes through `pandas.read_csv`, which already
+    decompresses by extension; these two readers stream the file by hand, so they
+    need this. The reference panel shipped in example/ is gzipped."""
+    return gzip.open(_fpath_ld, 'rt') if _fpath_ld.endswith('.gz') else open(_fpath_ld)
+
+
 def _detect_header(_fpath_ld):
     """Return True if the LD matrix file has a leading SNP-name header row.
     Raw `plink --r square` output is header-less (all-numeric first line);
     matrices written by src/Util.py carry a SNP-name header (index=False)."""
-    with open(_fpath_ld) as f:
+    with _open_ld(_fpath_ld) as f:
         toks = f.readline().rstrip('\n').split('\t')
     try:
         float(toks[0])
@@ -54,7 +62,7 @@ def load_signed_r_rows(_fpath_ld, _panel_snps, _needed_rows, _needed_cols):
     """
     has_header = _detect_header(_fpath_ld)
 
-    with open(_fpath_ld) as f:
+    with _open_ld(_fpath_ld) as f:
         if has_header:
             hdr = f.readline().rstrip('\n').split('\t')
             row_names = hdr

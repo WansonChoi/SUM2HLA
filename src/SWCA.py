@@ -394,8 +394,13 @@ class SWCA:
         ### SUM2HLA_SWCA_SIGNEDR_LD at the RAW `plink --r square` matrix ("LD.<ref>.ld").
         if not os.environ.get("SUM2HLA_USE_PLINK"):
             import src.SWCA_calc_r_r2_v2 as SWCA_calc_r_r2_v2
+            ### The matrix may be shipped either plain or gzipped (the example panel is
+            ### gzipped), so resolve the suffix the same way SUM2HLA_batch does.
+            default_signed_r_ld = self.fpath_ref_bfile + ".NoNA.PSD.ld"
+            if not exists(default_signed_r_ld):
+                default_signed_r_ld += ".gz"
             signed_r_ld = os.environ.get(
-                "SUM2HLA_SWCA_SIGNEDR_LD", self.fpath_ref_bfile + ".NoNA.PSD.ld")
+                "SUM2HLA_SWCA_SIGNEDR_LD", default_signed_r_ld)
             self.d_conditions_clumped, self.d_conditions_clumped_r2 = SWCA_calc_r_r2_v2.__MAIN__(
                 self.d_conditions, dirname(self.out_prefix_SWCA),
                 signed_r_ld, self.fpath_ref_bfile + ".bim"
