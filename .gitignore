@@ -1,6 +1,12 @@
 # Files
 .DS_Store
 
+# The T1DGC reference panel is available only upon request and must never be
+# published here. Local copies live in example/ for our own runs; keep every
+# one of them untracked. (T1DGC_prepr/ is a different thing -- the marker
+# lists and the panel .bim that we DO release -- so this is scoped to example/.)
+example/*T1DGC*
+
 # directories
 .idea/
 __pycache__/
