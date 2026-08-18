@@ -1,6 +1,8 @@
 example/REF_1kG.EUR.hg19.SNP+HLA.NoNA.PSD.ld.gz filter=lfs diff=lfs merge=lfs -text
 example/*.npy filter=lfs diff=lfs merge=lfs -text
 
-*.PP linguist-detectable=false
-*.PP linguist-generated=true
+*.APP linguist-detectable=false
+*.APP linguist-generated=true
+*.Z_imputed linguist-detectable=false
+*.Z_imputed linguist-generated=true
 
