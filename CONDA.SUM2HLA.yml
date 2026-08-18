@@ -1,0 +1,38 @@
+# Environment for SUM2HLA. Supports Linux and macOS (Intel and Apple Silicon);
+# Windows via WSL.
+#
+#   conda env create -f CONDA.SUM2HLA.yml
+#   conda activate SUM2HLA
+#
+# This file lists only the DIRECT dependencies, with version ranges instead of exact
+# builds, so that one file solves on every supported platform. Verified 2026-08-09:
+# linux-64, osx-64 and osx-arm64 all resolve to the same versions -- python 3.10.20,
+# jax/jaxlib 0.6.2 (cpu), numpy 1.26.4, pandas 2.3.3, scipy 1.15.2, plink 1.90b7.7,
+# git-lfs 3.7.1, threadpoolctl 3.6.0.
+#
+# Note for maintainers: `conda env export --no-builds` does NOT give a portable file.
+# It drops the build strings but still writes out every transitive, platform-specific
+# package (libgcc-ng on Linux, libcxx on macOS), so the result only installs on the
+# platform it was exported from. Keep editing this file by hand instead; use
+# `conda env export --from-history` if you want conda to regenerate it.
+name: SUM2HLA
+
+channels:
+  - conda-forge
+  - bioconda
+
+dependencies:
+  - python=3.10
+
+  # --- SUM2HLA runtime ---
+  - jax=0.6.2
+  - "jaxlib=0.6.2=cpu*"
+  - "numpy>=1.26,<2"
+  - "pandas>=2.1,<3"        # pandas 3.x is a breaking release and is NOT tested
+  - "scipy>=1.11"
+  - threadpoolctl           # used by src/SWCA_SummaryImp.py
+
+  # --- external tools ---
+  - plink=1.90b7.7          # builds the reference correlation matrix (see the Wiki);
+                            # also the legacy genotype-based clumping path
+  - git-lfs                 # fetches the example reference panel
